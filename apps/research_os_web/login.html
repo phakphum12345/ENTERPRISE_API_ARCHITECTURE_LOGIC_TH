@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101411">
+  <title>เข้าสู่ Research OS</title>
+  <link rel="stylesheet" href="/login.css">
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-panel" aria-labelledby="login-title">
+      <a class="brand" href="/" aria-label="กลับไป Research OS">
+        <span class="brand-mark">R</span>
+        <span><strong>Research OS</strong><small>Wide Research Workspace</small></span>
+      </a>
+
+      <div class="login-copy">
+        <span class="eyebrow">RESEARCH OS 3.2</span>
+        <h1 id="login-title">ยินดีต้อนรับกลับครับเพื่อน</h1>
+        <p>เข้าสู่ workspace ของคุณ เพื่อเริ่มงานวิจัย จัดการหลักฐาน และบันทึกความรู้ที่ผ่านการตรวจสอบ</p>
+      </div>
+
+      <div class="login-actions">
+        <button id="google-login" class="google-button" type="button">
+          <span class="google-icon" aria-hidden="true">G</span>
+          <span>เข้าสู่ระบบด้วย Google</span>
+          <span class="arrow" aria-hidden="true">&#8594;</span>
+        </button>
+        <p id="login-status" class="status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="login-footer">
+        <span>หรือ</span>
+        <a href="/">เข้าดู Research workspace</a>
+      </div>
+      <p class="privacy">ข้อมูลรับรองและ OAuth token จะถูกจัดเก็บไว้ที่ backend เท่านั้น</p>
+    </section>
+
+    <aside class="login-aside" aria-label="Research loop">
+      <div class="orbit orbit-one"></div>
+      <div class="orbit orbit-two"></div>
+      <div class="aside-content">
+        <span class="eyebrow">THE RESEARCH LOOP</span>
+        <h2>Question<br><em>to knowledge.</em></h2>
+        <div class="loop-list">
+          <span><b>01</b> Define the question</span>
+          <span><b>02</b> Gather the evidence</span>
+          <span><b>03</b> Verify every claim</span>
+          <span><b>04</b> Remember what matters</span>
+        </div>
+      </div>
+    </aside>
+  </main>
+  <script>
+    const button = document.getElementById('google-login');
+    const status = document.getElementById('login-status');
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      status.textContent = 'กำลังเชื่อมต่อ Google…';
+      try {
+        const response = await fetch('/v1/auth/google/start', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.authorization_url) {
+          throw new Error(payload.detail || 'Google sign-in ยังไม่พร้อมใช้งาน');
+        }
+        window.location.assign(payload.authorization_url);
+      } catch (error) {
+        status.textContent = error.message;
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

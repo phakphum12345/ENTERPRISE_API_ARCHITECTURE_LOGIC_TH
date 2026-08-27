@@ -37,7 +37,15 @@ CURATOR_PATH = ROOT / "tools" / "research_curator" / "curator.py"
 KNOWLEDGE_OPS_PATH = ROOT / "tools" / "research_curator" / "knowledge_ops.py"
 ARTIFACT_DIR = ROOT / "research" / "artifacts"
 WEB_DIR = ROOT / "apps" / "research_os_web"
-STATIC_ROUTES = {"/": "index.html", "/index.html": "index.html", "/app.css": "app.css", "/app.js": "app.js"}
+STATIC_ROUTES = {
+    "/": "index.html",
+    "/index.html": "index.html",
+    "/login": "login.html",
+    "/login.html": "login.html",
+    "/app.css": "app.css",
+    "/app.js": "app.js",
+    "/login.css": "login.css",
+}
 DEFAULT_GITHUB_REPOSITORY = "phakphoum38-stack/ENTERPRISE_API_ARCHITECTURE_LOGIC_TH"
 
 
