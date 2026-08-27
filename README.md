@@ -12,10 +12,10 @@ Repository นี้เป็นแหล่งอ้างอิงหลัก
 
 ## เวอร์ชันปัจจุบัน
 
-- **Version:** `v1.0.0-draft`
-- **Status:** Foundation Phase
-- **Part:** Part 1 — Foundation
-- **เอกสารล่าสุด:** ANEF-011 — Repository Structure
+- **Version:** `v3.2.0`
+- **Status:** Active — Workflow Runtime Foundation
+- **Part:** Workflow Runtime Foundation
+- **เอกสารล่าสุด:** Workflow Runtime Foundation (`current/workflow-runtime/`)
 
 ## โครงสร้าง
 
@@ -25,7 +25,8 @@ Repository นี้เป็นแหล่งอ้างอิงหลัก
 ├── CHANGELOG.md
 ├── VERSION_INDEX.md
 ├── current/
-│   └── README.md
+│   ├── README.md
+│   └── workflow-runtime/
 └── versions/
     └── v1.0.0-draft/
         ├── README.md
@@ -36,6 +37,29 @@ Repository นี้เป็นแหล่งอ้างอิงหลัก
 ## เป้าหมาย
 
 ANEF เป็น Framework ที่เป็นกลางต่อภาษา แพลตฟอร์ม ผู้ให้บริการ AI ระบบฐานข้อมูล และ Cloud Provider โดยใช้เอกสาร Contract และหลักฐานทางสถาปัตยกรรมเป็นแหล่งอ้างอิงหลัก
+
+## Runtime และ audit ล่าสุด
+
+- [V3 API Contract Draft](docs/V3_API_CONTRACT_DRAFT.md)
+- [API Implementation Matrix](docs/API_IMPLEMENTATION_MATRIX.md)
+- [Durable Runtime Gap Analysis](docs/DURABLE_RUNTIME_GAP_ANALYSIS.md)
+- [Production Observability Runbook](docs/PRODUCTION_OBSERVABILITY_RUNBOOK.md)
+- [Release Artifact / Installer Alignment](docs/RELEASE_ARTIFACT_INSTALLER_ALIGNMENT.md)
+- [V1/V2 Compatibility Map](docs/V1_V2_COMPATIBILITY_MAP.md)
+- [Delete/Retire Candidates](docs/DELETE_RETIRE_CANDIDATES.md)
+- [GUI/UX Audit Status](docs/GUI_UX_AUDIT_STATUS.md)
+
+### ตรวจสอบ local runtime
+
+```text
+PYTHONPATH=v3 python -m unittest discover -s v3/tests -p 'test_*.py' -q
+PYTHONPATH=tools/research_os_api python -m unittest discover -s tools/research_os_api -p 'test_*.py' -q
+```
+
+### Operational scripts
+
+- `v3/scripts/drain_outbox.py` publishes pending queue events in bounded batches.
+- `v3/scripts/export_runtime_metrics.py` exports durable event metrics as Prometheus text.
 
 ## Tooling / Integration Repository
 

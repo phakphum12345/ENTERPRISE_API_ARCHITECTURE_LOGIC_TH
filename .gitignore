@@ -222,6 +222,9 @@ __marimo__/
 **/.flutter-plugins
 **/.flutter-plugins-dependencies
 **/build/
+**/bin/
+**/obj/
+**/.research_os_data/
 
 # IDE / OS
 .idea/

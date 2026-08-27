@@ -19,6 +19,257 @@ paths:
       responses:
         "200":
           description: Provider list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderList'
+  /v1/auth/google/start:
+    post:
+      summary: Start Google identity sign-in
+      responses:
+        "200":
+          description: Google authorization state and URL
+        "400":
+          description: Google identity is not configured
+  /v1/auth/google/status:
+    get:
+      summary: Return Google identity connection status
+      responses:
+        "200":
+          description: Google identity status
+  /v1/auth/google/callback:
+    get:
+      summary: Complete Google identity sign-in callback
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sign-in completion page
+        "400":
+          description: Invalid or rejected callback
+  /v1/auth/google/signout:
+    post:
+      summary: Disconnect the Google identity session
+      responses:
+        "200":
+          description: Sign-out result
+  /v1/google-workspace/dashboard:
+    get:
+      summary: Return Google Workspace connection dashboard
+      responses:
+        "200":
+          description: Workspace dashboard
+  /v1/google-workspace/services:
+    post:
+      summary: Configure enabled Google Workspace services
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled_services]
+              properties:
+                enabled_services:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Updated Workspace dashboard
+        "400":
+          description: Invalid service list
+  /v1/google-workspace/oauth/start:
+    post:
+      summary: Start Google Workspace OAuth
+      responses:
+        "200":
+          description: Google authorization state and URL
+  /v1/google-workspace/oauth/status:
+    get:
+      summary: Return Google Workspace OAuth status
+      responses:
+        "200":
+          description: OAuth status
+  /v1/google-workspace/oauth/callback:
+    get:
+      summary: Complete Google Workspace OAuth callback
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OAuth completion page
+        "400":
+          description: Invalid or rejected callback
+  /v1/google-workspace/oauth/disconnect:
+    post:
+      summary: Disconnect Google Workspace OAuth
+      responses:
+        "200":
+          description: Disconnect result
+  /v1/conversations/cloud:
+    get:
+      summary: List cloud conversation sessions for the authenticated user
+      security:
+        - ResearchSession: []
+          ResearchSyncKey: []
+      responses:
+        "200":
+          description: Cloud conversation sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CloudSessionList'
+        "401":
+          description: Missing or invalid session or sync key
+        "503":
+          description: Cloud sync is not configured
+  /v1/conversations/cloud/sync:
+    post:
+      summary: Sync one conversation session to cloud storage
+      security:
+        - ResearchSession: []
+          ResearchSyncKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session]
+              properties:
+                session:
+                  type: object
+      responses:
+        "200":
+          description: Session synchronized
+        "400":
+          description: Invalid session payload
+        "401":
+          description: Missing or invalid session or sync key
+  /v1/conversations/cloud/delete:
+    post:
+      summary: Delete one cloud conversation session
+      security:
+        - ResearchSession: []
+          ResearchSyncKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+      responses:
+        "200":
+          description: Delete result
+        "401":
+          description: Missing or invalid session or sync key
+  /v1/memory/search:
+    get:
+      summary: Search persisted Research OS memory
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Memory search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemorySearchResponse'
+        "400":
+          description: Invalid query
+  /v1/memory/commit:
+    post:
+      summary: Commit an approved memory artifact
+      security:
+        - ResearchSyncKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Memory commit result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryCommitResponse'
+        "401":
+          description: Missing or invalid sync key
+  /v1/ai/answer-with-memory:
+    post:
+      summary: Answer a question using persisted Research OS memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question:
+                  type: string
+                limit:
+                  type: integer
+                provider:
+                  type: string
+                model:
+                  type: string
+      responses:
+        "200":
+          description: Generated answer with memory hits
+        "400":
+          description: Invalid question
+        "502":
+          description: Provider failure
+  /v1/github/dashboard:
+    get:
+      summary: Return repository status dashboard
+      parameters:
+        - name: repository
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Repository dashboard
+        "502":
+          description: GitHub status provider failure
   /v1/ai/generate:
     post:
       summary: Generate text through a selected provider adapter
@@ -414,6 +665,17 @@ paths:
                 $ref: '#/components/schemas/V2ErrorEnvelope'
 
 components:
+  securitySchemes:
+    ResearchSession:
+      type: apiKey
+      in: header
+      name: X-Research-OS-Session
+      description: Verified per-user Research OS session identifier.
+    ResearchSyncKey:
+      type: apiKey
+      in: header
+      name: X-Research-OS-Sync-Key
+      description: Server-side cloud sync capability key. Never expose this value to clients.
   parameters:
     RunId:
       name: run_id
@@ -528,6 +790,64 @@ components:
         "404":
           description: Orchestration run not found
   schemas:
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+        path:
+          type: string
+    ProviderList:
+      type: object
+      required: [providers, active]
+      properties:
+        providers:
+          type: array
+          items:
+            type: string
+        active:
+          type: string
+    CloudSessionList:
+      type: object
+      required: [sessions, count, durability, knowledge_persisted]
+      properties:
+        sessions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        count:
+          type: integer
+          minimum: 0
+        durability:
+          type: string
+        knowledge_persisted:
+          type: boolean
+    MemorySearchResponse:
+      type: object
+      required: [query, count, hits, source]
+      properties:
+        query:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+        hits:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        source:
+          type: string
+    MemoryCommitResponse:
+      type: object
+      additionalProperties: true
+    OAuthStatus:
+      type: object
+      additionalProperties: true
     DelegatedStepInput:
       type: object
       required: [objective]
