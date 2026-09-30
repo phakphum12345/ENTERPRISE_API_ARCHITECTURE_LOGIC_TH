@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Dependency-free Research OS HTTP API and Entrance UI server."""
 
 from __future__ import annotations
