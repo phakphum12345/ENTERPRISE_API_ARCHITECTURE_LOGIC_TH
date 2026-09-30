@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Dependency-free Research OS HTTP API and Entrance UI server."""
 
 from __future__ import annotations
@@ -323,13 +323,6 @@ class ResearchOSHandler(BaseHTTPRequestHandler):
                     sec = html.escape(secret, quote=True)
                     href = f"/v1/auth/pairing/authorize?provider={provider}&pairing_id={pid}&secret={sec}"
                     buttons.append(f'<p><a href="{href}" style="display:inline-block;padding:12px 18px;border:1px solid #888;border-radius:8px;text-decoration:none">{name}</a></p>')
-                body = (
-                    "<html><head><meta name="viewport" content="width=device-width,initial-scale=1">"
-                    "<title>Research OS Connect</title></head><body style="font-family:system-ui;max-width:520px;margin:48px auto;padding:20px">"
-                    "<h2>Research OS</h2><p>Choose the identity provider for this pairing.</p>"
-                    + "".join(buttons)
-                    + "<p>This pairing is single-use and expires automatically.</p></body></html>"
-                )
                 self._send_html(HTTPStatus.OK, body)
                 return
             if path == "/v1/auth/pairing/authorize":
