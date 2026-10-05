@@ -1,0 +1,1 @@
+from tools.research_os_api.api_auth import require_api_principal
