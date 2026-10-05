@@ -61,6 +61,34 @@ class ResearchOSApiClient {
   Future<Map<String, dynamic>> signOut() =>
       _postJson('/v1/auth/signout', const <String, Object?>{});
 
+  Future<Map<String, dynamic>> getPlatformResource(String resource) =>
+      _getJson('/platform/v1/$resource');
+
+  Future<Map<String, dynamic>> createPlatformResource(
+    String resource,
+    Map<String, Object?> payload,
+  ) =>
+      _postJson('/platform/v1/$resource', payload);
+
+  Future<Map<String, dynamic>> getPlatformKeys(String applicationId) =>
+      _getJson('/platform/v1/applications/${Uri.encodeComponent(applicationId)}/keys');
+
+  Future<Map<String, dynamic>> createPlatformKey(
+    String applicationId,
+    Map<String, Object?> payload,
+  ) =>
+      _postJson('/platform/v1/applications/${Uri.encodeComponent(applicationId)}/keys', payload);
+
+  Future<Map<String, dynamic>> revokePlatformKey(String keyId) =>
+      _postJson('/platform/v1/applications/_/keys/${Uri.encodeComponent(keyId)}/revoke', const <String, Object?>{});
+
+  Future<Map<String, dynamic>> rotatePlatformKey(
+    String applicationId,
+    String keyId,
+    Map<String, Object?> payload,
+  ) =>
+      _postJson('/platform/v1/applications/${Uri.encodeComponent(applicationId)}/keys/${Uri.encodeComponent(keyId)}/rotate', payload);
+
   Future<Map<String, dynamic>> getHealth() => _getJson('/health');
   Future<Map<String, dynamic>> getProjects() => _getJson('/v1/projects');
   Future<Map<String, dynamic>> getProviders() => _getJson('/v1/providers');
