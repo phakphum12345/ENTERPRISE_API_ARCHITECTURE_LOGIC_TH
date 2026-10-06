@@ -53,7 +53,7 @@ jobs:
           flutter create --platforms=web .
           flutter pub get
           flutter test test/widget_test.dart
-          flutter build web --release --dart-define=RESEARCH_OS_API_BASE_URL=https://research-os-api-phakphoum.onrender.com
+          flutter build web --release --dart-define=RESEARCH_OS_API_BASE_URL=https://research-os-api-phakphoum-v0wf.onrender.com
       - name: Stage website bundle
         run: |
           mkdir -p artifact/website-static artifact/flutter-web
@@ -62,7 +62,7 @@ jobs:
           python - <<'PY'
           import json, os
           from pathlib import Path
-          Path("artifact/manifest.json").write_text(json.dumps({"artifact":"research-os-website","target_sha":os.environ["TARGET_SHA"],"canonical_ui":{"source":"apps/research_os_flutter","artifact":"flutter-web","api_base":"https://research-os-api-phakphoum.onrender.com"},"compatibility_ui":{"source":"apps/research_os_web","artifact":"website-static","status":"compatibility-only"}}, indent=2), encoding="utf-8")
+          Path("artifact/manifest.json").write_text(json.dumps({"artifact":"research-os-website","target_sha":os.environ["TARGET_SHA"],"canonical_ui":{"source":"apps/research_os_flutter","artifact":"flutter-web","api_base":"https://research-os-api-phakphoum-v0wf.onrender.com"},"compatibility_ui":{"source":"apps/research_os_web","artifact":"website-static","status":"compatibility-only"}}, indent=2), encoding="utf-8")
           PY
       - name: Upload website artifact
         uses: actions/upload-artifact@v4
