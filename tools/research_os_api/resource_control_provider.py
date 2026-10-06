@@ -4,9 +4,14 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Callable, Mapping
 
-from execution_contract import ExecutionContext, MeasuredExecution
-from resource_control_plane import ExecutionResult, ResourceControlPlane
-from resource_governance import Usage
+try:
+    from .execution_contract import ExecutionContext, MeasuredExecution
+    from .resource_control_plane import ExecutionResult, ResourceControlPlane
+    from .resource_governance import Usage
+except ImportError:  # direct script/PYTHONPATH execution
+    from execution_contract import ExecutionContext, MeasuredExecution
+    from resource_control_plane import ExecutionResult, ResourceControlPlane
+    from resource_governance import Usage
 
 
 @dataclass(frozen=True)
