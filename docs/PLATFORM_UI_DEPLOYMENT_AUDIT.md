@@ -33,7 +33,7 @@ That is a local development endpoint and is not suitable as the production web b
 
 The workflow now builds the canonical Flutter web artifact against:
 
-`https://research-os-api-phakphoum.onrender.com`
+`https://research-os-api-phakphoum-v0wf.onrender.com`
 
 The manifest now explicitly distinguishes:
 - canonical UI: `apps/research_os_flutter` -> `flutter-web`
@@ -44,11 +44,11 @@ The canonical Render service configuration is represented by `render.yaml`:
 - service: `research-os-api-phakphoum`
 - health path: `/health`
 - start command: `cd tools/research_os_api && python render_server.py`
-- public base URL: `https://research-os-api-phakphoum.onrender.com`
-- Google identity callback: `https://research-os-api-phakphoum.onrender.com/v1/auth/google/callback`
+- public base URL: `https://research-os-api-phakphoum-v0wf.onrender.com`
+- Google identity callback: `https://research-os-api-phakphoum-v0wf.onrender.com/v1/auth/google/callback`
 - allowed browser origin currently configured as `https://phakphoum38-stack.github.io`
 
-The Render connector currently exposes only the `phakphoum54@gmail.com` workspace, which contains no visible services. The existing `research-os-api-phakphoum` service is therefore not independently verifiable through the connected Render workspace at audit time.
+The production Render service is now independently verified through the connected Render workspace: service `srv-db2jv449v7es738cejm0`, branch `main`, repository `phakphum12345/ENTERPRISE_API_ARCHITECTURE_LOGIC_TH`, and live deploy `dep-db2k5up42hec738q5b2g` at canonical SHA `ec19ce664f1430c90313bf69b38ca37be4c0a56c`. The live Render URL is `https://research-os-api-phakphoum-v0wf.onrender.com`.
 
 ### Authentication boundary
 The canonical Flutter app calls the server auth-status endpoint during startup.
