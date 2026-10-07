@@ -13,6 +13,12 @@ class FlutterLiveSpineValidationTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["findings"], [])
 
+    def test_live_spine_result_serializes_source_files_as_repository_paths(self):
+        result = validate(ROOT)
+        self.assertTrue(result["source_files"])
+        self.assertTrue(all(isinstance(path, str) for path in result["source_files"]))
+        self.assertTrue(all(not path.startswith("/") for path in result["source_files"]))
+
     def test_live_spine_contract_keeps_three_explicit_surfaces(self):
         result = validate(ROOT)
         self.assertEqual(
