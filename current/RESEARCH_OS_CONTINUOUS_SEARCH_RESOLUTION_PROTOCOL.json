@@ -1,0 +1,218 @@
+{
+  "protocol_id": "research-os-continuous-search-resolution-protocol-v1",
+  "version": "1.0.0",
+  "status": "ACTIVE",
+  "purpose": "Recursively discover, trace, verify, and close the whole-system evidence graph until a fixed point is reached or every remaining item is explicitly blocked; a first-pass search is never treated as exhaustive.",
+  "authority": {
+    "source_of_truth": "Git repository at exact source SHA",
+    "parent_contract": "research-os-m2-whole-system-audit-index-v2",
+    "integration_protocol": "research-os-code-integration-protocol-v1",
+    "audit_index_is_descriptive_only": true,
+    "no_new_runtime_authority": true,
+    "no_new_release_authority": true
+  },
+  "session": {
+    "required_fields": [
+      "session_id",
+      "source_sha",
+      "started_at",
+      "seed_set",
+      "protocol_id"
+    ],
+    "source_sha_must_remain_constant_during_session": true
+  },
+  "discovery": {
+    "strategy": "queue_based_recursive_fixed_point",
+    "seeds": [
+      "repository_root",
+      "required_contracts",
+      "required_workflows",
+      "canonical_flutter_surface",
+      "backend_api_surface",
+      "deployment_configuration",
+      "tests"
+    ],
+    "searchable_types": [
+      "FILE",
+      "CONTRACT",
+      "TEST",
+      "WORKFLOW",
+      "INVARIANT",
+      "AUTHORITY"
+    ],
+    "file_extensions": [
+      ".dart",
+      ".py",
+      ".json",
+      ".yaml",
+      ".yml",
+      ".js",
+      ".html",
+      ".css",
+      ".md",
+      ".sh",
+      ".ps1"
+    ],
+    "expansion_relations": [
+      "REFERENCES",
+      "VERIFIED_BY",
+      "DISPATCHES_OR_REFERENCES",
+      "PARTICIPATES_IN",
+      "BINDS_TO",
+      "ENFORCES_OR_REFERENCES"
+    ],
+    "expansion_sources": [
+      "imports_and_exports",
+      "filesystem_paths",
+      "endpoint_strings",
+      "environment_variables",
+      "contract_ids",
+      "test_targets",
+      "workflow_steps",
+      "deployment_bindings",
+      "UI_actions",
+      "API_client_methods",
+      "backend_routes",
+      "response_models",
+      "runtime_dependencies"
+    ]
+  },
+  "queue": {
+    "states": [
+      "PENDING",
+      "RESOLVING",
+      "RESOLVED",
+      "BLOCKED"
+    ],
+    "deduplicate_by": "canonical_node_id",
+    "every_discovered_node_must_be_indexed": true,
+    "every_expansion_must_record_evidence": true,
+    "requeue_when_new_relation_or_evidence_is_discovered": true,
+    "empty_queue_is_required_for_closure": true
+  },
+  "fixed_point": {
+    "definition": "A search pass is complete only when processing the queue produces no new canonical nodes, no new edges, and no changed verification state.",
+    "minimum_passes": 2,
+    "closure_requires": [
+      "queue_empty",
+      "no_unprocessed_edges",
+      "all_required_nodes_classified",
+      "no_unrecorded_findings"
+    ],
+    "if_new_nodes_appear": "continue_search",
+    "if_new_edges_appear": "continue_search",
+    "if_verification_state_changes": "requeue_affected_node"
+  },
+  "bounds": {
+    "purpose": "Prevent accidental runaway traversal without silently converting a bounded search into PASS.",
+    "max_depth": 64,
+    "max_nodes": 100000,
+    "max_edges": 500000,
+    "on_limit": "BLOCKED",
+    "bounded_search_is_pass": false
+  },
+  "resolution": {
+    "statuses": [
+      "PASS",
+      "MISSING",
+      "INCOMPLETE",
+      "BROKEN",
+      "DRIFT",
+      "DUPLICATE",
+      "UNKNOWN",
+      "DEFERRED",
+      "BLOCKED"
+    ],
+    "rules": {
+      "unknown_is_not_pass": true,
+      "skipped_is_not_pass": true,
+      "deferred_is_not_done": true,
+      "blocked_is_not_done": true,
+      "evidence_required_for_pass": true
+    }
+  },
+  "ui_api_runtime": {
+    "required_trace": [
+      "UX/UI component",
+      "user action",
+      "Dart state/controller",
+      "Dart API client method",
+      "HTTP method and endpoint",
+      "JSON contract/schema",
+      "Python route/handler",
+      "Python service/data",
+      "JSON response",
+      "Dart parser/model",
+      "UI state/result",
+      "deployed runtime"
+    ],
+    "runtime_required_for_release": true,
+    "static_string_match_is_insufficient": true,
+    "canonical_surface": "apps/research_os_flutter",
+    "competing_public_surface_requires_explicit_classification": true
+  },
+  "evidence": {
+    "per_node": [
+      "canonical_node_id",
+      "source_sha",
+      "node_type",
+      "path_or_identity",
+      "status",
+      "evidence"
+    ],
+    "per_edge": [
+      "from",
+      "relation",
+      "to",
+      "source_sha",
+      "evidence"
+    ],
+    "session_outputs": [
+      "m2_audit_index.json",
+      "m2_search_trace.json",
+      "m2_evidence_graph.json",
+      "m2_unresolved.json",
+      "m2_final_result.json",
+      "m2_audit_index_summary.txt"
+    ]
+  },
+  "stop_conditions": {
+    "PASS": [
+      "fixed_point_reached",
+      "queue_empty",
+      "required_graph_closed",
+      "no_unclassified_required_node",
+      "release_evidence_complete"
+    ],
+    "BLOCKED": [
+      "search_bound_reached",
+      "runtime_unavailable",
+      "required_source_unavailable",
+      "authority_ambiguity_unresolved"
+    ],
+    "never_stop_on": [
+      "first_successful_search",
+      "single_passing_test",
+      "CI_green_only",
+      "filename_match_only"
+    ]
+  },
+  "workflow": [
+    "READ",
+    "ANALYZE",
+    "DISCOVER",
+    "EXPAND",
+    "RESOLVE",
+    "RECHECK",
+    "TEST",
+    "AUDIT",
+    "CLOSE"
+  ],
+  "safety": {
+    "auto_repair": false,
+    "authority_changes_require_explicit_review": true,
+    "production_endpoint_changes_require_explicit_review": true,
+    "main_direct_write_forbidden": true,
+    "destructive_history_rewrite_forbidden": true
+  }
+}
