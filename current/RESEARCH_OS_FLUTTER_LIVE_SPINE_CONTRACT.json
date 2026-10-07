@@ -1,0 +1,95 @@
+{
+  "contract_id": "research-os-flutter-live-spine-v1",
+  "version": "1.0.0",
+  "status": "ACTIVE",
+  "purpose": "Descriptive live-topology overlay for the three existing Flutter roots. It binds product, privileged Owner/Friend, and V3 compatibility surfaces to explicit runtime authorities without replacing existing feature-convergence or release contracts.",
+  "authority": {
+    "kind": "DESCRIPTIVE_LIVE_TOPOLOGY",
+    "may_authorize": false,
+    "may_execute": false,
+    "may_approve": false,
+    "may_merge": false,
+    "may_release": false,
+    "release_authority": "FINAL_GATE"
+  },
+  "existing_authorities": [
+    "current/RESEARCH_OS_FLUTTER_CONTRACT.json",
+    "current/RESEARCH_OS_FLUTTER_CONVERGENCE_MAP.json",
+    "current/RESEARCH_OS_PLATFORM_RUNTIME_RESOLUTION_CONTRACT.json",
+    "current/RESEARCH_OS_PLATFORM_SELF_RECONCILIATION_CONTRACT.json",
+    "current/RESEARCH_OS_M2_AUDIT_INDEX_CONTRACT.json"
+  ],
+  "surfaces": {
+    "A": {
+      "root": "apps/research_os_flutter",
+      "role": "canonical_product_live_surface",
+      "production_api": "https://research-os-api-phakphoum.onrender.com",
+      "local_development_api": "http://127.0.0.1:8787",
+      "production_source_of_truth": "RESEARCH_OS_API_BASE_URL"
+    },
+    "B": {
+      "root": "owner_special/flutter_app",
+      "role": "privileged_owner_friend_surface",
+      "owner_service_local": "http://127.0.0.1:8790",
+      "research_api_production": "https://research-os-api-phakphoum.onrender.com",
+      "research_api_local": "http://127.0.0.1:8787",
+      "owner_service_environment": "RESEARCH_OS_FRIEND_URL",
+      "research_api_environment": "RESEARCH_OS_API_BASE_URL"
+    },
+    "C": {
+      "root": "v3/flutter_app",
+      "role": "compatibility_release_surface",
+      "local_runtime": "http://127.0.0.1:8788",
+      "environment": "RESEARCH_OS_V3_BASE_URL",
+      "production_role": "compatibility_only"
+    }
+  },
+  "rules": [
+    "A production defaults to the canonical Render Research OS API.",
+    "B may retain a separate privileged Owner/Friend service, but Research OS auth/chat/data calls must have an explicit production binding to the canonical Render API.",
+    "C remains compatibility-scoped and must not become a second public product authority.",
+    "Local loopback defaults are development bindings only and must never be silently treated as production evidence.",
+    "Unknown or implicit endpoint ownership is a drift finding.",
+    "This overlay does not change the feature classification authority of the existing convergence map."
+  ],
+  "reconciliation": {
+    "required_dimensions": [
+      "root",
+      "entrypoint",
+      "api_base_url",
+      "auth_authority",
+      "runtime_role",
+      "environment_override",
+      "production_binding",
+      "compatibility_scope"
+    ],
+    "states": [
+      "PASS",
+      "DRIFT",
+      "UNKNOWN",
+      "PROTECTED"
+    ],
+    "unknown_is_not_pass": true
+  },
+  "auto_repair": {
+    "enabled": false,
+    "delegates_to": "tools/platform_self_reconciliation.py",
+    "repair_pipeline": "tools/repair_diff_pipeline.py",
+    "evidence_pipeline": "tools/repair_diff_evidence.py",
+    "policy": "Only uniquely deterministic, non-protected path/reference repairs may be proposed automatically. Endpoint/auth authority changes require explicit review.",
+    "main_direct_write_forbidden": true,
+    "auto_merge_forbidden": true
+  },
+  "evidence": {
+    "required": [
+      "source_sha",
+      "contract_id",
+      "surface",
+      "observed_bindings",
+      "expected_bindings",
+      "findings",
+      "validation"
+    ],
+    "authority_note": "Evidence proves reconciliation state; evidence does not grant merge or release authority."
+  }
+}
