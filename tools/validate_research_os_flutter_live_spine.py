@@ -45,6 +45,14 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     c_api = read(root / "v3/flutter_app/lib/src/api/v3_api.dart")
 
     required_paths = {
+        "A_endpoint": root / "apps/research_os_flutter/lib/src/api/api_endpoint_store.dart",
+        "A_entrypoint": root / "apps/research_os_flutter/lib/src/research_os_app.dart",
+        "B_entrypoint": root / "owner_special/flutter_app/lib/main.dart",
+        "B_api": root / "owner_special/flutter_app/lib/src/owner_api.dart",
+        "C_entrypoint": root / "v3/flutter_app/lib/main.dart",
+        "C_api": root / "v3/flutter_app/lib/src/api/v3_api.dart",
+    }
+    required_content = {
         "A_endpoint": a_endpoint,
         "A_entrypoint": a_app,
         "B_entrypoint": b_main,
@@ -52,7 +60,7 @@ def validate(root: Path = ROOT) -> dict[str, object]:
         "C_entrypoint": c_main,
         "C_api": c_api,
     }
-    for name, content in required_paths.items():
+    for name, content in required_content.items():
         if not content:
             findings.append({"surface": name, "state": "UNKNOWN", "reason": "required source file missing"})
 
