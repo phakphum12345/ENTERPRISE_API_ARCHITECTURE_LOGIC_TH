@@ -52,6 +52,11 @@ jobs:
           export RESEARCH_OS_CONVERSATION_STORE="$RUNNER_TEMP/ResearchOSData/sessions/conversations.json"
           python -m unittest discover -s tools/research_os_api -p "test_*.py" -v
 
+      - name: Validate M2 Flutter live spine
+        run: |
+          python tools/validate_research_os_flutter_live_spine.py --json-out "$RUNNER_TEMP/flutter-live-spine.json"
+          python -m unittest tests.test_validate_research_os_flutter_live_spine -v
+
       - name: Set up Flutter
         if: ${{ inputs.include_flutter == true }}
         uses: subosito/flutter-action@v2
