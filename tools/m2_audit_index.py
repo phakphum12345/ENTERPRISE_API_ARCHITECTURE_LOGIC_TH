@@ -182,7 +182,7 @@ def build(source_sha: str | None = None) -> dict:
         findings.extend({"state": "BROKEN", "node": e["from"], "reason": "dangling graph edge"} for e in dangling)
 
     unresolved = [f for f in findings if f["state"] != "PASS"]
-    status = "PASS" if not unresolved else "BLOCKED"
+    integrity_failures = [f for f in findings if f["state"] in {"BROKEN", "DUPLICATE"}]\n    status = "PASS" if not integrity_failures else "BLOCKED"
     result = {
         "contract_id": contract.get("contract_id"),
         "protocol_id": protocol.get("protocol_id"),
@@ -212,9 +212,7 @@ def build(source_sha: str | None = None) -> dict:
             "reason": "repository index cannot substitute for deployed runtime evidence",
         },
     }
-    if result["status"] == "PASS":
-        result["findings"].append({"state": "DEFERRED", "node": "RUNTIME:deployed", "reason": "runtime evidence is required for release"})
-        result["status"] = "BLOCKED"
+    result["release_ready"] = result["status"] == "PASS" and not result["findings"] and result["runtime"]["validated"]\n    if not result["runtime"]["validated"]:\n        result["findings"].append({"state": "DEFERRED", "node": "RUNTIME:deployed", "reason": "runtime evidence is required for release"})\n        result["release_ready"] = False
     return result
 
 
