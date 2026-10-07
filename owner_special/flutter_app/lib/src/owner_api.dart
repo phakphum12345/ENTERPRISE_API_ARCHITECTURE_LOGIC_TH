@@ -50,8 +50,13 @@ void registerOwnerFriendApi(OwnerFriendApi api) {
 
 String _normalizeBaseUrl(String value) => value.endsWith('/') ? value.substring(0, value.length - 1) : value;
 
+const _researchOsProductionBaseUrl = String.fromEnvironment(
+  'RESEARCH_OS_API_BASE_URL',
+  defaultValue: 'https://research-os-api-phakphoum.onrender.com',
+);
+
 final class HttpOwnerFriendApi implements OwnerFriendApi, OwnerSessionSecurityApi {
-  HttpOwnerFriendApi({required String baseUrl, required this.ownerId, this.profileId = 'default', this.sessionId = 'desktop', String researchOsBaseUrl = 'http://127.0.0.1:8787', this.timeout = const Duration(seconds: 5), this.chatTimeout = const Duration(seconds: 30)})
+  HttpOwnerFriendApi({required String baseUrl, required this.ownerId, this.profileId = 'default', this.sessionId = 'desktop', String researchOsBaseUrl = _researchOsProductionBaseUrl, this.timeout = const Duration(seconds: 5), this.chatTimeout = const Duration(seconds: 30)})
       : baseUrl = _normalizeBaseUrl(baseUrl),
         researchOsBaseUrl = _normalizeBaseUrl(researchOsBaseUrl);
   final String baseUrl;
