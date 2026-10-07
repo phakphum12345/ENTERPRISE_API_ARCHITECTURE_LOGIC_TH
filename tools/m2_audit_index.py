@@ -182,7 +182,8 @@ def build(source_sha: str | None = None) -> dict:
         findings.extend({"state": "BROKEN", "node": e["from"], "reason": "dangling graph edge"} for e in dangling)
 
     unresolved = [f for f in findings if f["state"] != "PASS"]
-    integrity_failures = [f for f in findings if f["state"] in {"BROKEN", "DUPLICATE"}]\n    status = "PASS" if not integrity_failures else "BLOCKED"
+    integrity_failures = [f for f in findings if f["state"] in {"BROKEN", "DUPLICATE"}]
+    status = "PASS" if not integrity_failures else "BLOCKED"
     result = {
         "contract_id": contract.get("contract_id"),
         "protocol_id": protocol.get("protocol_id"),
