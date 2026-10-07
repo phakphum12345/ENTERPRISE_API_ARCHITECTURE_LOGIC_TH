@@ -1,0 +1,155 @@
+{
+  "protocol_id": "research-os-code-integration-protocol-v1",
+  "version": "1.0.0",
+  "status": "ACTIVE",
+  "purpose": "Require every material UX/UI-to-API change to be validated as a real cross-layer integration, not merely as a passing CI check.",
+  "scope": {
+    "canonical_product_surface": "apps/research_os_flutter",
+    "backend": "tools/research_os_api",
+    "contracts": "current",
+    "tests": "tests",
+    "ci": ".github/workflows",
+    "runtime": "deployed service and configured production dependencies"
+  },
+  "code_components": {
+    "dart": {
+      "role": "Flutter UX/UI, state, API clients, models, actions and presentation",
+      "required_checks": [
+        "entrypoint_and_navigation",
+        "user_action_to_state_transition",
+        "api_client_method",
+        "request_path_and_method",
+        "response_model_or_parser",
+        "loading_empty_error_success_states"
+      ]
+    },
+    "json": {
+      "role": "Contracts, schemas, manifests, topology and machine-readable configuration",
+      "required_checks": [
+        "schema_validity",
+        "authority_alignment",
+        "endpoint_and_environment_binding",
+        "version_or_contract_identity",
+        "source_sha_or_provenance_when_required"
+      ]
+    },
+    "python": {
+      "role": "API handlers, services, business logic, validators, tests and evidence generation",
+      "required_checks": [
+        "route_exists",
+        "method_and_path_match",
+        "request_contract_match",
+        "response_contract_match",
+        "error_mapping",
+        "authorization_boundary",
+        "unit_or_integration_test"
+      ]
+    },
+    "yaml": {
+      "role": "CI/CD, deployment and environment configuration",
+      "required_checks": [
+        "workflow_trigger",
+        "exact_revision",
+        "required_gate_execution",
+        "environment_binding",
+        "permissions",
+        "deploy_target"
+      ]
+    },
+    "yml": {
+      "role": "Same protocol requirements as YAML configuration",
+      "required_checks": [
+        "syntax",
+        "trigger",
+        "permissions",
+        "gate_execution",
+        "deployment_binding"
+      ]
+    },
+    "runtime": {
+      "role": "Actual deployed execution authority",
+      "required_checks": [
+        "health",
+        "critical_api",
+        "authentication",
+        "canonical_endpoint",
+        "critical_user_flow",
+        "response_shape",
+        "error_and_latency_observation"
+      ]
+    }
+  },
+  "integration_trace": [
+    "UX/UI component",
+    "user action",
+    "Dart state/controller",
+    "Dart API client method",
+    "HTTP method and endpoint",
+    "JSON contract/schema",
+    "Python route/handler",
+    "Python service/data operation",
+    "JSON response",
+    "Dart parser/model",
+    "UI state/result",
+    "deployed runtime"
+  ],
+  "workflow": {
+    "READ": [
+      "identify all affected .dart, .json, .py, .yml and .yaml components",
+      "identify the canonical UI surface and runtime authority",
+      "trace existing callers, routes, contracts and tests before editing"
+    ],
+    "ANALYZE": [
+      "build the cross-layer integration trace",
+      "compare request and response contracts",
+      "detect duplicate or competing endpoint authority",
+      "classify each observation as PASS, DRIFT, UNKNOWN or PROTECTED",
+      "treat UNKNOWN as not PASS"
+    ],
+    "WRITE_MODIFY": [
+      "change only proven gaps",
+      "preserve canonical history and provenance",
+      "do not silently change endpoint or authentication authority",
+      "do not make direct writes to main for protocol-driven repairs"
+    ],
+    "TEST": [
+      "run focused regression tests",
+      "run relevant Python tests and validation",
+      "run Flutter analyze/tests for affected Flutter surfaces",
+      "validate JSON/YAML syntax and contracts",
+      "run applicable CI gates"
+    ],
+    "AUDIT": [
+      "repeat the cross-layer trace after modification",
+      "verify UI action reaches the intended API",
+      "verify backend response reaches and is rendered by the UI",
+      "verify deployed runtime where runtime evidence is required",
+      "record source SHA, contract IDs, observed/expected bindings, findings and validation"
+    ]
+  },
+  "release_rules": {
+    "ci_green_is_not_sufficient": true,
+    "ui_api_runtime_trace_required": true,
+    "unknown_is_not_pass": true,
+    "skipped_is_not_pass": true,
+    "deferred_is_not_done": true,
+    "production_loopback_is_drift": true,
+    "competing_public_authority_is_drift": true,
+    "endpoint_or_auth_authority_change_requires_explicit_review": true,
+    "release_authority": "FINAL_GATE"
+  },
+  "evidence": {
+    "required": [
+      "source_sha",
+      "protocol_id",
+      "affected_components",
+      "integration_trace",
+      "observed_bindings",
+      "expected_bindings",
+      "findings",
+      "tests",
+      "runtime_validation"
+    ],
+    "principle": "Passing a validator proves only the validator's scope; release evidence must prove the actual integration path."
+  }
+}
