@@ -15,13 +15,11 @@ class M2AuditIndexTests(unittest.TestCase):
         kinds = {node["node_type"] for node in result["nodes"]}
         self.assertTrue({"FILE", "CONTRACT", "TEST", "WORKFLOW", "INVARIANT", "AUTHORITY"} <= kinds)
 
-    def test_build_fails_closed_when_m2_audit_gate_is_missing(self):
+    def test_build_registers_m2_audit_authority_without_granting_release_authority(self):
         result = m2_audit_index.build()
-        self.assertIn(result["status"], {"PASS", "BLOCKED"})
-        self.assertTrue(any(
-            item["state"] == "MISSING" and item["node"] == "AUTHORITY:m2_audit"
-            for item in result["findings"]
-        ))
+        gate = next(node for node in result["nodes"] if node["canonical_node_id"] == "AUTHORITY:m2_audit")
+        self.assertEqual(gate["status"], "PASS")
+        self.assertFalse(result["release_ready"])
 
     def test_write_outputs_are_machine_readable_and_source_pinned(self):
         result = m2_audit_index.build()
