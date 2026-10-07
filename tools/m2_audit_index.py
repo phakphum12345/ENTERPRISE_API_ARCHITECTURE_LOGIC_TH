@@ -213,7 +213,10 @@ def build(source_sha: str | None = None) -> dict:
             "reason": "repository index cannot substitute for deployed runtime evidence",
         },
     }
-    result["release_ready"] = result["status"] == "PASS" and not result["findings"] and result["runtime"]["validated"]\n    if not result["runtime"]["validated"]:\n        result["findings"].append({"state": "DEFERRED", "node": "RUNTIME:deployed", "reason": "runtime evidence is required for release"})\n        result["release_ready"] = False
+    result["release_ready"] = result["status"] == "PASS" and not result["findings"] and result["runtime"]["validated"]
+    if not result["runtime"]["validated"]:
+        result["findings"].append({"state": "DEFERRED", "node": "RUNTIME:deployed", "reason": "runtime evidence is required for release"})
+        result["release_ready"] = False
     return result
 
 
