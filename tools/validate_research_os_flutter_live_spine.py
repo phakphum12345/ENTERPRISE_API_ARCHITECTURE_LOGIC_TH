@@ -103,7 +103,7 @@ def validate(root: Path = ROOT) -> dict[str, object]:
     return {
         "contract_id": contract.get("contract_id"),
         "status": status,
-        "source_files": sorted(str(path.relative_to(root)) for path in required_paths),
+        "source_files": sorted(str(path.relative_to(root)) for path in required_paths.values()),
         "canonical_render": CANONICAL_RENDER,
         "surfaces": {
             "A": "canonical_product_live_surface",
