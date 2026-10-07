@@ -1,0 +1,52 @@
+name: M2 Audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m2_audit:
+    name: m2_audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact source SHA
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - name: Run M2 audit index tests
+        run: python -m unittest tests/test_m2_audit_index.py -v
+
+      - name: Build M2 audit evidence
+        run: |
+          set -euo pipefail
+          python tools/m2_audit_index.py --out-dir evidence/m2
+
+      - name: Verify required outputs
+        run: |
+          set -euo pipefail
+          test -s evidence/m2/m2_audit_index.json
+          test -s evidence/m2/m2_search_trace.json
+          test -s evidence/m2/m2_evidence_graph.json
+          test -s evidence/m2/m2_unresolved.json
+          test -s evidence/m2/m2_final_result.json
+          test -s evidence/m2/m2_audit_index_summary.txt
+
+      - name: Upload M2 audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2-audit-${{ github.sha }}
+          path: evidence/m2/
+          if-no-files-found: error
