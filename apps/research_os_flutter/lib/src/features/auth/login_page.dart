@@ -63,6 +63,15 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _retryLoadingProviders() {
+    setState(() {
+      _loading = true;
+      _error = false;
+      _message = null;
+    });
+    _loadProviders();
+  }
+
   Future<void> _login(Map<String, dynamic> provider) async {
     final id = provider['id']?.toString().trim() ?? '';
     final name = provider['name']?.toString().trim() ?? id;
@@ -190,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         subtitle: Text(
                           _loading
-                              ? 'กำลังตรวจสอบตัวเลือกการเข้าสู่ระบบ…'
+                              ? 'กำลังเชื่อมต่อกับ Research OS…'
                               : 'เลือกผู้ให้บริการภายใน',
                         ),
                         childrenPadding:
@@ -202,11 +211,22 @@ class _LoginPageState extends State<LoginPage> {
                               child: CircularProgressIndicator(),
                             )
                           else if (_providers.isEmpty)
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.all(18),
-                              child: Text(
-                                'ยังไม่มีผู้ให้บริการที่พร้อมใช้งาน',
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  const Text(
+                                    'ยังไม่มีผู้ให้บริการที่พร้อมใช้งาน',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  if (_error)
+                                    TextButton.icon(
+                                      onPressed: _retryLoadingProviders,
+                                      icon: const Icon(Icons.refresh),
+                                      label: const Text('ลองโหลดอีกครั้ง'),
+                                    ),
+                                ],
                               ),
                             )
                           else
