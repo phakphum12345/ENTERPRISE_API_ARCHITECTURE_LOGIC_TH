@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -63,5 +64,40 @@ void main() {
     expect(find.text('Developer Runtime'), findsOneWidget);
     expect(find.text('127.0.0.1:8787'), findsNothing);
     expect(find.text('127.0.0.1:8790'), findsNothing);
+  });
+
+  testWidgets('login offers retry when provider loading times out', (
+    tester,
+  ) async {
+    final pendingResponse = Completer<http.Response>();
+    final client = ResearchOSApiClient(
+      baseUrl: 'http://research-os.test',
+      authRequestTimeout: const Duration(milliseconds: 50),
+      client: MockClient((_) => pendingResponse.future),
+    );
+
+    addTearDown(client.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginPage(
+          apiClient: client,
+          connectionProfile: 'research_os',
+          onConnectionChanged: (_) async {},
+          onAuthenticated: () {},
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump();
+
+    await tester.tap(find.text('Login'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Research OS API request timed out.'),
+      findsOneWidget,
+    );
+    expect(find.text('ลองโหลดอีกครั้ง'), findsOneWidget);
   });
 }
