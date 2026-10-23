@@ -171,7 +171,7 @@ def preview(project_name: str, relative: str, original_sha256: str, content: str
         "project": project_name,
         "path": current["path"],
         "original_sha256": original_sha256,
-        "new_sha256": _sha(content),
+        "new_sha256": _sha(_normalize_newlines(content)),
         "changed": _normalize_newlines(content) != current["content"],
         "diff": diff,
     }
