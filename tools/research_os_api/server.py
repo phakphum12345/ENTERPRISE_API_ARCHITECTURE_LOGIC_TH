@@ -608,8 +608,9 @@ class ResearchOSHandler(BaseHTTPRequestHandler):
                 self._send(HTTPStatus.OK, resume_checkpoint(user_id, checkpoint_id))
                 return
             if path == "/v1/auth/pairing/start":
+                pairing_base_url = self._pairing_base_url()
                 pairing = create_pairing()
-                pairing_url = f"{self._pairing_base_url()}/v1/auth/pairing/open?" + urlencode({"pairing_id": pairing["pairing_id"], "secret": pairing["pairing_secret"]})
+                pairing_url = f"{pairing_base_url}/v1/auth/pairing/open?" + urlencode({"pairing_id": pairing["pairing_id"], "secret": pairing["pairing_secret"]})
                 self._send(HTTPStatus.CREATED, {**pairing, "qr_payload": pairing_url, "pairing_url": pairing_url, "qr_type": "research_os_pairing", "session_in_qr": False})
                 return
             if path == "/v1/auth/pairing/approve":
