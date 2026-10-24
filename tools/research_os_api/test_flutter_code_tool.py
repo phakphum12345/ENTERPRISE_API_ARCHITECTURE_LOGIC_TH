@@ -98,13 +98,14 @@ class FlutterCodeToolTests(unittest.TestCase):
 
     def test_preview_normalizes_newlines_and_reports_matching_hash(self) -> None:
         current = tool.read_file("research_os_flutter", "lib/main.dart")
+        crlf_content = "void main() {" + "\r\n" + "  print(1);" + "\r\n" + "}" + "\r\n"
+        normalized_content = "void main() {" + "\n" + "  print(1);" + "\n" + "}" + "\n"
         preview = tool.preview(
-            "research_os_flutter", "lib/main.dart", current["sha256"],
-            "void main() {\r\n  print(1);\r\n}\r\n",
+            "research_os_flutter", "lib/main.dart", current["sha256"], crlf_content,
         )
         self.assertEqual(
             preview["new_sha256"],
-            hashlib.sha256("void main() {\n  print(1);\n}\n".encode("utf-8")).hexdigest(),
+            hashlib.sha256(normalized_content.encode("utf-8")).hexdigest(),
         )
 
 if __name__ == "__main__":
