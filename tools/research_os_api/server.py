@@ -383,6 +383,11 @@ class ResearchOSHandler(BaseHTTPRequestHandler):
                 if not code or not state:
                     raise ValueError("Google sign-in callback requires code and state")
                 result = GoogleIdentityBroker().complete(code=code, state=state)
+                pairing = __import__("server_auth_routes")._pairing_completion(state, result)
+                if pairing is not None:
+                    location = "/v1/auth/pairing/open?" + urlencode({"pairing_id": pairing["pairing_id"], "secret": pairing["pairing_secret"]})
+                    self._redirect(location)
+                    return
                 email = str((result.get("account") or {}).get("email") or "Google account")
                 dashboard_origin = (os.getenv("RESEARCH_OS_DASHBOARD_ORIGIN") or "https://phakphum12345.github.io").strip().rstrip("/")
                 safe_state = json.dumps(state).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
@@ -403,7 +408,12 @@ class ResearchOSHandler(BaseHTTPRequestHandler):
             for provider in ("microsoft", "github"):
                 if path == f"/v1/auth/{provider}/callback":
                     result, cookie = __import__("server_auth_routes").auth_callback(provider, parsed.query)
-                    self._redirect("/", cookie)
+                    pairing = result.get("pairing") if isinstance(result, dict) else None
+                    if pairing:
+                        location = "/v1/auth/pairing/open?" + urlencode({"pairing_id": pairing["pairing_id"], "secret": pairing["pairing_secret"]})
+                        self._redirect(location, cookie)
+                    else:
+                        self._redirect("/", cookie)
                     return
             if path == "/v1/google-workspace/dashboard":
                 self._send(HTTPStatus.OK, get_google_workspace_dashboard())
