@@ -67,7 +67,7 @@ class FlutterCodeToolTests(unittest.TestCase):
         with patch("flutter_code_tool.validate", return_value={"ok": True, "steps": []}):
             result = tool.apply(
                 "research_os_flutter", "lib/main.dart", current["sha256"],
-                "void main() { print(2); }\\n", "OWNER@example.com",
+                "void main() { print(2); }\n", "OWNER@example.com",
             )
         self.assertTrue(result["applied"])
 
@@ -76,7 +76,7 @@ class FlutterCodeToolTests(unittest.TestCase):
         current = tool.read_file("research_os_flutter", "lib/main.dart")
         result = tool.apply(
             "research_os_flutter", "lib/main.dart", current["sha256"],
-            "void main() { broken( }\\n", "owner@example.com",
+            "void main() { broken( }\n", "owner@example.com",
         )
         self.assertFalse(result["applied"])
         self.assertTrue(result["rolled_back"])
@@ -88,23 +88,23 @@ class FlutterCodeToolTests(unittest.TestCase):
     def test_apply_rejects_stale_sha(self) -> None:
         current = tool.read_file("research_os_flutter", "lib/main.dart")
         (self.root / "apps" / "research_os_flutter" / "lib" / "main.dart").write_text(
-            "void main() { print(99); }\\n", encoding="utf-8"
+            "void main() { print(99); }\n", encoding="utf-8"
         )
         with self.assertRaises(RuntimeError):
             tool.apply(
                 "research_os_flutter", "lib/main.dart", current["sha256"],
-                "void main() { print(3); }\\n", "owner@example.com",
+                "void main() { print(3); }\n", "owner@example.com",
             )
 
     def test_preview_normalizes_newlines_and_reports_matching_hash(self) -> None:
         current = tool.read_file("research_os_flutter", "lib/main.dart")
         preview = tool.preview(
             "research_os_flutter", "lib/main.dart", current["sha256"],
-            "void main() {\\r\\n  print(1);\\r\\n}\\r\\n",
+            "void main() {\r\n  print(1);\r\n}\r\n",
         )
         self.assertEqual(
             preview["new_sha256"],
-            hashlib.sha256("void main() {\\n  print(1);\\n}\\n".encode("utf-8")).hexdigest(),
+            hashlib.sha256("void main() {\n  print(1);\n}\n".encode("utf-8")).hexdigest(),
         )
 
 if __name__ == "__main__":
