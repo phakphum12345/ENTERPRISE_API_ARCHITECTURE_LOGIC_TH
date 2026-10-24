@@ -7,7 +7,7 @@ from urllib.parse import parse_qs, urlparse
 from auth_session import SESSION_COOKIE, clear_cookie_header, cookie_header, revoke_session, verify_session
 from google_identity import GoogleIdentityBroker
 from multi_login_runtime import MultiLoginRuntimeError, begin_runtime_login, complete_runtime_login
-from oauth_handoff import consume_handoff, create_handoff, handoff_root
+from oauth_handoff import consume_handoff
 from qr_pairing import bind_oauth_state, consume_oauth_binding
 
 
