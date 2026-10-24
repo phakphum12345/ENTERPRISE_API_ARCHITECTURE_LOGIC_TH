@@ -135,8 +135,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
     await tester.pump();
 
-    await tester.tap(find.text('Login'));
-    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Research OS API request timed out.'),
+      findsOneWidget,
+    );
+    expect(find.text('ลองโหลดอีกครั้ง'), findsOneWidget);
+
+    await tester.tap(find.text('ลองโหลดอีกครั้ง'));
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump();
 
     expect(
       find.textContaining('Research OS API request timed out.'),
