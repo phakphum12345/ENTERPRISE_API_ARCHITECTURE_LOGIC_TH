@@ -348,7 +348,8 @@ switch ($Action) {
     if (-not (Get-ServiceSafe)) { throw 'Research OS Service is not installed.' }
     Start-Service -Name $ServiceName
     Wait-ServiceState 'Running' | Out-Null
-    Write-Host 'Research OS Service started.'
+    $readyEndpoint = Wait-ResearchOsApiReady
+    Write-Host "Research OS Service started at $($readyEndpoint.base_url)."
   }
 
   'stop' {
@@ -364,6 +365,7 @@ switch ($Action) {
     Stop-ResearchOsServiceAndApi
     Start-Service -Name $ServiceName
     Wait-ServiceState 'Running' | Out-Null
-    Write-Host 'Research OS Service restarted.'
+    $readyEndpoint = Wait-ResearchOsApiReady
+    Write-Host "Research OS Service restarted at $($readyEndpoint.base_url)."
   }
 }
