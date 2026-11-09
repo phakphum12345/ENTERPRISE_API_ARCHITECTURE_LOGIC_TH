@@ -42,7 +42,7 @@ def default_owner_data_root() -> Path:
 class OwnerFriendService:
     """Loopback-only HTTP boundary for the Owner Special Friend runtime."""
 
-    def __init__(self, *, owner_id: str, host: str = "127.0.0.1", port: int = 8790, data_root: Path | None = None, repository_root: Path | None = None, audit_path: Path | None = None, provider_manager: ProviderManager | None = None) -> None:
+    def __init__(self, *, owner_id: str, host: str = "127.0.0.1", port: int = 0, data_root: Path | None = None, repository_root: Path | None = None, audit_path: Path | None = None, provider_manager: ProviderManager | None = None) -> None:
         if host != "127.0.0.1":
             raise ValueError("Owner Friend Service must bind to 127.0.0.1")
         self.host = host
