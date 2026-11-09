@@ -13,7 +13,7 @@ API กลางแบบ **Provider-agnostic** สำหรับเชื่�
 
 ### Windows — Local Research OS พร้อม Friend Service
 
-สำหรับ Research OS Web ที่ใช้ `RESEARCH_OS_AI_ROUTE=friend` ให้ใช้ launcher นี้แทนการเปิด API อย่างเดียว เพราะ Friend Service ที่ `127.0.0.1:8790` เป็น dependency ของ research route:
+สำหรับ Research OS Web ที่ใช้ `RESEARCH_OS_AI_ROUTE=friend` ให้ใช้ launcher นี้แทนการเปิด API อย่างเดียว เพราะ Friend Service เป็น dependency ภายในที่ค้นพบผ่าน Service Registry โดยไม่ผูกกับหมายเลข Port:
 
 ```powershell
 .\scripts\start-research-os-local.ps1
@@ -26,7 +26,7 @@ Launcher จะ:
 3. ถ้ายังไม่ทำงาน จะ start `owner_special/scripts/run_friend_service.py`
 4. รอจน health เป็น `ok`
 5. ตั้ง `RESEARCH_OS_FRIEND_URL` และ `RESEARCH_OS_AI_ROUTE=friend`
-6. จึง start Research OS API ที่ `8787`
+6. จึง start Research OS API ด้วย Port 0 เพื่อให้ OS จัดสรร Port ขณะ bind socket และเผยแพร่ Endpoint จริงลง Registry
 7. เมื่อรันแบบ foreground จะ cleanup Friend Service ตอนจบ
 
 Background mode:
@@ -38,8 +38,10 @@ Background mode:
 ตรวจสถานะ:
 
 ```powershell
-curl http://127.0.0.1:8787/health
-curl http://127.0.0.1:8790/owner/health
+$api = Get-Content "$env:USERPROFILE\ResearchOSData\run\services\research-os-api.json" -Raw | ConvertFrom-Json
+$friend = Get-Content "$env:USERPROFILE\ResearchOSData\run\services\owner-friend.json" -Raw | ConvertFrom-Json
+Invoke-RestMethod "$($api.base_url)/health"
+Invoke-RestMethod "$($friend.base_url)/owner/health"
 ```
 
 > ไม่ควรแก้ปัญหา `Connection refused` ด้วยการ fallback ไป `mock` เพราะจะทำให้ research response อาจกลายเป็น mock/echo ที่ไม่ใช่ผลจาก Friend runtime จริง
@@ -49,7 +51,7 @@ curl http://127.0.0.1:8790/owner/health
 ถ้าตั้งใจใช้ API โดยไม่ใช้ Friend route:
 
 ```bash
-python tools/research_os_api/server.py --host 127.0.0.1 --port 8787
+python tools/research_os_api/server.py --host 127.0.0.1 --port 0
 ```
 
 วิเคราะห์บทสนทนา:
@@ -77,13 +79,13 @@ curl -X POST http://127.0.0.1:8787/v1/ai/generate \
 Canonical entrypoint:
 
 ```bash
-python owner_special/scripts/run_friend_service.py --owner-id owner --host 127.0.0.1 --port 8790
+python owner_special/scripts/run_friend_service.py --owner-id owner --host 127.0.0.1 --port 0
 ```
 
 Health endpoint:
 
 ```text
-GET http://127.0.0.1:8790/owner/health
+GET {owner-friend.base_url}/owner/health (resolve owner-friend from the local Service Registry)
 ```
 
 Chat endpoint requires the Owner identity headers and is consumed internally by `/v1/ai/generate` when `RESEARCH_OS_AI_ROUTE=friend`.
