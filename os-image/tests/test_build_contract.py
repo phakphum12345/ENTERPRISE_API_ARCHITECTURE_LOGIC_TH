@@ -16,6 +16,7 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("--debian-installer none", script)
         self.assertIn("lb clean --purge", script)
         self.assertNotIn("lb clean --purge || true", script)
+        self.assertIn("chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary", script)
 
     def test_recommends_are_disabled_and_live_user_prerequisites_are_explicit(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8")
