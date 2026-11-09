@@ -157,9 +157,26 @@ jobs:
         working-directory: v3/flutter_app
         run: flutter test
 
-      - name: Flutter debug APK build
+      - name: Flutter debug APK build (retry transient Gradle download failures)
         working-directory: v3/flutter_app
-        run: flutter build apk --debug
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Flutter debug APK build attempt $attempt/3"
+            if flutter build apk --debug; then
+              echo "FLUTTER_DEBUG_APK_BUILD=PASS"
+              exit 0
+            fi
+            status=$?
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "Flutter debug APK build failed after 3 attempts (exit $status)." >&2
+              exit "$status"
+            fi
+            delay=$((attempt * 15))
+            echo "Build failed; retrying in $delay seconds."
+            sleep "$delay"
+          done
 
   gate:
     name: Research OS Final Gate
