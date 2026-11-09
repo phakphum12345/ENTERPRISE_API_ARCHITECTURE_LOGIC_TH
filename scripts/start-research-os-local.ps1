@@ -181,9 +181,26 @@ if ($Background) {
     if ([int]::TryParse($existingPidText, [ref]$existingPid)) {
       $existing = Get-Process -Id $existingPid -ErrorAction SilentlyContinue
       if ($existing) {
-        Write-Host "Research OS Local API is already running (PID $existingPid)."
-        if ($friendProcess) { Stop-Process -Id $friendProcess.Id -Force -ErrorAction SilentlyContinue }
-        exit 0
+        if (-not $friendProcess) {
+          Write-Host "Research OS Local API is already running (PID $existingPid) and its Friend dependency is healthy."
+          exit 0
+        }
+        $existingInfo = Get-CimInstance Win32_Process -Filter "ProcessId=$existingPid" -ErrorAction SilentlyContinue
+        if (-not $existingInfo -or ([string]$existingInfo.CommandLine) -notmatch 'render_server\.py') {
+          throw "Refusing to restart PID $existingPid because it is not a verified Research OS render_server.py process."
+        }
+        Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue
+        Wait-Process -Id $existingPid -Timeout 10 -ErrorAction SilentlyContinue
+        if (Test-Path $PidFile) { Remove-Item $PidFile -Force -ErrorAction SilentlyContinue }
+        if (Test-Path (Join-Path $RegistryDir "research-os-api.json")) {
+          try {
+            $oldEndpoint = Get-Content (Join-Path $RegistryDir "research-os-api.json") -Raw | ConvertFrom-Json
+            if ([int]$oldEndpoint.pid -eq $existingPid) {
+              Remove-Item (Join-Path $RegistryDir "research-os-api.json") -Force -ErrorAction SilentlyContinue
+            }
+          } catch { }
+        }
+        Write-Host "Restarting Research OS API so it adopts the newly discovered Friend endpoint."
       }
     }
     Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
