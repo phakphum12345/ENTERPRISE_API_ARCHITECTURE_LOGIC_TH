@@ -49,8 +49,13 @@ class CloudResearchOSHandler(V2ResearchOSHandler):
 def main() -> int:
     # Hosted deployments supply PORT. Local launchers default to 0 so the OS
     # atomically assigns a free port during the actual listen() call.
-    host = os.getenv("HOST") or os.getenv("RESEARCH_OS_API_HOST") or "127.0.0.1"
-    port_value = os.getenv("PORT") or os.getenv("RESEARCH_OS_API_PORT") or "0"
+    hosted_port = os.getenv("PORT")
+    if hosted_port:
+        # PaaS deployments must bind the platform-provided interface and port.
+        host = os.getenv("HOST") or os.getenv("RESEARCH_OS_API_HOST") or "0.0.0.0"
+    else:
+        host = os.getenv("RESEARCH_OS_API_HOST") or "127.0.0.1"
+    port_value = hosted_port or os.getenv("RESEARCH_OS_API_PORT") or "0"
     port = int(port_value)
     server = ThreadingHTTPServer((host, port), CloudResearchOSHandler)
     actual_host, actual_port = server.server_address[:2]
