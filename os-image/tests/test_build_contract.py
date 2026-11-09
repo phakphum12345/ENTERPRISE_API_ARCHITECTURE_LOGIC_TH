@@ -76,6 +76,14 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn('json.dumps(metadata, indent=2, sort_keys=True) + chr(10)', script)
         self.assertNotIn(r'json.dumps(metadata, indent=2, sort_keys=True) + "\\n"', script)
 
+    def test_documentation_first_troubleshooting_protocol_is_present(self):
+        protocol = (ROOT / "docs/TROUBLESHOOTING_PROTOCOL.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("READ → ANALYZE → PLAN → MODIFY → TEST → AUDIT", protocol)
+        self.assertIn("binary_hooks", protocol)
+        self.assertIn("cd binary", protocol)
+        self.assertIn("TROUBLESHOOTING_PROTOCOL.md", readme)
+
     def test_build_script_contains_no_physical_disk_write_commands(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8").lower()
         forbidden = (
