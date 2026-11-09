@@ -113,6 +113,7 @@ REQUIRED_FILES = (
     "tools/platform_governance_report.py",
     "tools/test_project_registry.py",
     ".github/workflows/research-os-gate.yml",
+    ".github/workflows/research-os-linux-image.yml",
     ".github/workflows/research-os-final-gate.yml",
     ".github/workflows/research-os-platform-surface-matrix.yml",
     ".github/workflows/research-os-ios-ipa.yml",
