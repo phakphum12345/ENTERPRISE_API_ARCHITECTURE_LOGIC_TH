@@ -9,14 +9,31 @@ fi
 
 OVMF_CODE="${OVMF_CODE:-}"
 if [[ -z "$OVMF_CODE" ]]; then
-  for candidate in /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_CODE.fd /usr/share/ovmf/OVMF.fd; do
+  # OVMF package layouts differ between Ubuntu and Debian runner images.
+  # Prefer the conventional CODE firmware paths, then discover the package
+  # payload instead of assuming one distribution-specific directory.
+  for candidate in \
+    /usr/share/OVMF/OVMF_CODE_4M.fd \
+    /usr/share/OVMF/OVMF_CODE.fd \
+    /usr/share/ovmf/OVMF.fd \
+    /usr/share/edk2/ovmf/OVMF_CODE_4M.fd \
+    /usr/share/edk2/ovmf/OVMF_CODE.fd \
+    /usr/share/qemu/OVMF_CODE_4M.fd \
+    /usr/share/qemu/OVMF_CODE.fd; do
     if [[ -s "$candidate" ]]; then OVMF_CODE="$candidate"; break; fi
   done
 fi
+if [[ -z "$OVMF_CODE" ]]; then
+  while IFS= read -r candidate; do
+    if [[ -s "$candidate" ]]; then OVMF_CODE="$candidate"; break; fi
+  done < <(find /usr/share -type f \\( -name 'OVMF_CODE*.fd' -o -name 'OVMF.fd' \\) -print 2>/dev/null | sort)
+fi
 if [[ -z "$OVMF_CODE" || ! -s "$OVMF_CODE" ]]; then
-  echo "OVMF UEFI firmware was not found." >&2
+  echo "OVMF UEFI firmware was not found. Installed candidates:" >&2
+  find /usr/share -type f \\( -iname '*ovmf*' -o -iname '*edk2*' \\) -print 2>/dev/null | head -80 >&2 || true
   exit 2
 fi
+echo "Using OVMF UEFI firmware: $OVMF_CODE"
 if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
   echo "qemu-system-x86_64 is required." >&2
   exit 2
