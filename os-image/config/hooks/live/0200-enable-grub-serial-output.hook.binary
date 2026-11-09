@@ -3,7 +3,7 @@ set -eu
 
 # Keep the normal video console and mirror GRUB output to COM1 so headless
 # UEFI/QEMU smoke tests can prove that the EFI loader reached the live menu.
-GRUB_CONFIG="binary/boot/grub/grub.cfg"
+GRUB_CONFIG="boot/grub/grub.cfg"
 if [ ! -s "$GRUB_CONFIG" ]; then
   echo "Expected generated GRUB config is missing: $GRUB_CONFIG" >&2
   exit 1
