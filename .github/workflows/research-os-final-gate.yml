@@ -55,7 +55,7 @@ jobs:
 
   linux-image:
     name: Research OS Linux Live Image
-    if: github.event_name == 'pull_request' && github.head_ref == 'feat/research-os-linux-live-image'
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/research-os-linux-live-image')
     uses: ./.github/workflows/research-os-linux-image.yml
 
   flutter-gate:
