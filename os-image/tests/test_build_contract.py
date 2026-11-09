@@ -17,6 +17,13 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("lb clean --purge", script)
         self.assertNotIn("lb clean --purge || true", script)
 
+    def test_recommends_are_disabled_and_live_user_prerequisites_are_explicit(self):
+        script = (ROOT / "build.sh").read_text(encoding="utf-8")
+        packages = (ROOT / "config/package-lists/researchos.list.chroot").read_text(encoding="utf-8")
+        self.assertIn("--apt-recommends false", script)
+        self.assertIn("sudo", packages.splitlines())
+        self.assertIn("user-setup", packages.splitlines())
+
     def test_iso_discovery_accepts_live_build_working_directory_output(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8")
         self.assertIn('find "$ROOT" -maxdepth 2 -type f -name', script)
