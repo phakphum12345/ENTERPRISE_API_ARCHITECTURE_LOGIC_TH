@@ -58,11 +58,8 @@ lb config \
   --bootappend-live "boot=live components hostname=researchos username=researchos console=ttyS0,115200n8" \
   --uefi-secure-boot auto
 
-# Git content APIs do not preserve executable mode; make the binary hook
-# executable explicitly so live-build runs it before producing the ISO.
-chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary
-# Git content APIs do not preserve executable mode; make the binary hook
-# executable explicitly so live-build runs it before producing the ISO.
+# Ensure the binary hook is executable; live-build also enforces this
+# when invoking hooks, but set the mode explicitly for reproducible intent.
 chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary
 lb build
 
