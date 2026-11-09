@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -63,6 +64,7 @@ def main() -> None:
             remove_endpoint(
                 "owner-friend",
                 directory=registry_dir,
+                pid=os.getpid(),
             )
         service.close()
 
