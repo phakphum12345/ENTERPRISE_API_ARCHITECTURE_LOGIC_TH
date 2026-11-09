@@ -75,8 +75,60 @@ grep -Eq 'filesystem.squashfs' "$DIST/iso-live-contents.txt"
 (
   cd "$DIST"
   sha256sum research-os-amd64.iso > SHA256SUMS
-  chroot "$ROOT/chroot" dpkg-query -W -f='${Package}=${Version}\n' | sort > SBOM-packages.txt
+  chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
 )
+
+python3 - "$DIST/SBOM.cdx.json" "$DIST/PACKAGE-INVENTORY.txt" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+import uuid
+from datetime import datetime, timezone
+from urllib.parse import quote
+
+output, inventory_path, source_sha, epoch = sys.argv[1:]
+inventory = pathlib.Path(inventory_path).read_text(encoding="utf-8").splitlines()
+components = []
+for line in inventory:
+    if not line.strip():
+        continue
+    name, version = line.split("\\t", 1)
+    package_name, _, architecture = name.partition(":")
+    purl = "pkg:deb/debian/" + quote(package_name, safe=".+-") + "@" + quote(version, safe=".+-")
+    if architecture:
+        purl += "?arch=" + quote(architecture, safe=".+-")
+    components.append({
+        "type": "library",
+        "name": package_name,
+        "version": version,
+        "purl": purl,
+        "scope": "required",
+    })
+inventory_sha = hashlib.sha256(pathlib.Path(inventory_path).read_bytes()).hexdigest()
+serial = uuid.uuid5(uuid.NAMESPACE_URL, "research-os:" + source_sha + ":" + inventory_sha)
+timestamp = datetime.fromtimestamp(int(epoch), timezone.utc).isoformat().replace("+00:00", "Z")
+bom = {
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "serialNumber": "urn:uuid:" + str(serial),
+    "version": 1,
+    "metadata": {
+        "timestamp": timestamp,
+        "component": {
+            "type": "operating-system",
+            "name": "Research OS",
+            "version": "0.1.0-dev",
+        },
+        "properties": [
+            {"name": "researchos:source-sha", "value": source_sha},
+            {"name": "researchos:base-suite", "value": "trixie"},
+        ],
+    },
+    "components": components,
+}
+pathlib.Path(output).write_text(json.dumps(bom, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+PY
 
 python3 - "$DIST/build-metadata.json" "$DEBIAN_SUITE" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$DIST/research-os-amd64.iso" <<'PY'
 import hashlib
@@ -107,8 +159,10 @@ metadata = {
     "source_sha": source_sha,
     "source_date_epoch": int(epoch),
     "live_build_version": __import__("subprocess").check_output(["lb", "--version"], text=True).strip(),
-    "package_inventory": "SBOM-packages.txt",
-    "package_inventory_sha256": hashlib.sha256(pathlib.Path("dist/SBOM-packages.txt").read_bytes()).hexdigest(),
+    "package_inventory": "PACKAGE-INVENTORY.txt",
+    "sbom": "SBOM.cdx.json",
+    "sbom_sha256": hashlib.sha256(pathlib.Path("dist/SBOM.cdx.json").read_bytes()).hexdigest(),
+    "package_inventory_sha256": hashlib.sha256(pathlib.Path("dist/PACKAGE-INVENTORY.txt").read_bytes()).hexdigest(),
     "size_bytes": path.stat().st_size,
     "sha256": digest,
     "hardware_qualification": "not-performed",
