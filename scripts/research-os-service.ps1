@@ -64,6 +64,30 @@ function Get-PortListeners([int]$Port = 0) {
   return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
 }
 
+function Wait-ResearchOsApiReady([int]$Seconds = 40) {
+  $deadline = (Get-Date).AddSeconds($Seconds)
+  do {
+    if (Test-Path $ApiEndpointFile) {
+      try {
+        $endpoint = Get-Content -Path $ApiEndpointFile -Raw | ConvertFrom-Json
+        if ($endpoint.schema_version -eq 1 -and
+            $endpoint.service -eq 'research-os-api' -and
+            $endpoint.host -in @('127.0.0.1', '::1', 'localhost') -and
+            [int]$endpoint.port -ge 1 -and
+            [int]$endpoint.port -le 65535) {
+          $owner = Get-Process -Id ([int]$endpoint.pid) -ErrorAction SilentlyContinue
+          if ($owner) {
+            $health = Invoke-RestMethod -Uri "$($endpoint.base_url)/health" -TimeoutSec 2
+            if ($health.status -eq 'ok') { return $endpoint }
+          }
+        }
+      } catch { }
+    }
+    Start-Sleep -Milliseconds 500
+  } while ((Get-Date) -lt $deadline)
+  throw "Research OS API did not publish a healthy dynamic endpoint within $Seconds seconds."
+}
+
 function Test-ResearchOsApiProcess([int]$ProcessId) {
   $process = Get-CimInstance Win32_Process -Filter "ProcessId=$ProcessId" -ErrorAction SilentlyContinue
   if (-not $process) { return $false }
@@ -184,7 +208,19 @@ switch ($Action) {
     Write-Host "Research OS Service: $($svc.Status)"
     Write-Host "Service name       : $ServiceName"
     Write-Host "Startup            : $startMode"
-    Write-Host "Local API          : dynamically discovered from $ApiEndpointFile"
+    $currentPort = Get-CurrentApiPort
+    if ($currentPort -le 0) {
+      Write-Host "Local API          : UNAVAILABLE (registry not published)"
+      exit 1
+    }
+    try {
+      $health = Invoke-RestMethod -Uri "http://127.0.0.1:$currentPort/health" -TimeoutSec 3
+      if ($health.status -ne 'ok') { throw "Health check failed." }
+      Write-Host "Local API          : READY http://127.0.0.1:$currentPort"
+    } catch {
+      Write-Host "Local API          : UNAVAILABLE ($($_.Exception.Message))"
+      exit 1
+    }
     exit 0
   }
 
@@ -259,6 +295,7 @@ switch ($Action) {
     try {
       Start-Service -Name $ServiceName
       Wait-ServiceState 'Running' | Out-Null
+      $readyEndpoint = Wait-ResearchOsApiReady
     }
     catch {
       $svc = Get-ServiceSafe
