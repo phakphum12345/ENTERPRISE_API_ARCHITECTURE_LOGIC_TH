@@ -89,7 +89,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: research-os-live-iso-${{ github.sha }}
+          name: research-os-live-iso-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             os-image/dist/research-os-amd64.iso
             os-image/dist/SHA256SUMS
