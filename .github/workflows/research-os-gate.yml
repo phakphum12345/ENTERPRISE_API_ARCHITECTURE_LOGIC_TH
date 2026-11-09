@@ -167,8 +167,9 @@ jobs:
             if flutter build apk --debug; then
               echo "FLUTTER_DEBUG_APK_BUILD=PASS"
               exit 0
+            else
+              status=$?
             fi
-            status=$?
             if [[ "$attempt" -eq 3 ]]; then
               echo "Flutter debug APK build failed after 3 attempts (exit $status)." >&2
               exit "$status"
