@@ -11,7 +11,7 @@ import 'package:research_os_flutter/src/features/auth/login_page.dart';
 
 void main() {
   testWidgets(
-      'shared auth port and user-level controls use the canonical UI contract',
+      'login and user-level controls use service discovery without port selection',
       (tester) async {
     final client = ResearchOSApiClient(
       baseUrl: 'http://research-os.test',
@@ -40,8 +40,6 @@ void main() {
       MaterialApp(
         home: LoginPage(
           apiClient: client,
-          connectionProfile: 'research_os',
-          onConnectionChanged: (_) async {},
           onAuthenticated: () {},
         ),
       ),
@@ -49,9 +47,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // PORT is a user-facing label, not a raw endpoint.
-    expect(find.text('PORT'), findsOneWidget);
-    expect(find.text('PORT 1'), findsOneWidget);
+    // Service discovery is automatic; Login must not expose port numbers or selectors.
+    expect(find.text('PORT'), findsNothing);
+    expect(find.text('PORT 1'), findsNothing);
+    expect(find.text('PORT 2'), findsNothing);
     expect(find.text('127.0.0.1:8787'), findsNothing);
     expect(find.text('127.0.0.1:8790'), findsNothing);
 
@@ -100,14 +99,7 @@ void main() {
 
     expect(find.text('Developer'), findsOneWidget);
 
-    // PORT dropdown exposes only PORT labels.
-    await tester.tap(find.byKey(const ValueKey('login-port-dropdown')));
-    await tester.pumpAndSettle();
 
-    expect(find.text('PORT 1'), findsWidgets);
-    expect(find.text('PORT 2'), findsOneWidget);
-    expect(find.text('8787'), findsNothing);
-    expect(find.text('8790'), findsNothing);
   });
 
   testWidgets('login offers retry when provider loading times out', (
