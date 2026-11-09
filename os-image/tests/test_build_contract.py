@@ -60,6 +60,14 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn('-drive if=pflash,format=raw,unit=1,file="$WORK/OVMF_VARS.fd"', script)
         self.assertNotIn('-bios "$OVMF_CODE"', script)
 
+    def test_grub_serial_output_is_enabled_without_disabling_video_console(self):
+        hook = (ROOT / "config/hooks/live/0200-enable-grub-serial-output.hook.binary").read_text(encoding="utf-8")
+        self.assertIn('GRUB_CONFIG="binary/boot/grub/grub.cfg"', hook)
+        self.assertIn("serial --unit=0 --speed=115200", hook)
+        self.assertIn("terminal_input console serial", hook)
+        self.assertIn("terminal_output console serial", hook)
+        self.assertIn('cat "$GRUB_CONFIG"', hook)
+
     def test_build_script_contains_no_physical_disk_write_commands(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8").lower()
         forbidden = (
