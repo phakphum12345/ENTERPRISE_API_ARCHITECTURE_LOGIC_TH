@@ -170,10 +170,12 @@ The failing log for the Linux ISO job shows:
 - The hook was invoked and exited because it could not find `binary/boot/grub/grub.cfg`.
 - The job stopped at the hook; UEFI/QEMU boot, checksum, SBOM, and artifact upload were not reached in that run.
 
-The Debian Live Manual documents binary hooks as running after the other binary commands and before `binary_checksums`. The Debian live-build GRUB configuration source sets `_TARGET="binary/boot/grub"`, creates that directory, copies templates there, and modifies matching `*.cfg` files. These facts mean the current failure must be investigated as a mismatch between the actual generated GRUB files/working directory and the hook's hard-coded single-file assumption. Do not repeat the unsupported claim that the binary hook ran before `binary_grub_cfg`.
+The Debian Live Manual documents binary hooks as running after the other binary commands and before `binary_checksums`. The exact Debian Trixie `live-build 1:20250505+deb13u1` source shows that `binary_grub_cfg` sets `_TARGET="binary/boot/grub"`, creates that directory, copies GRUB templates there, and edits matching `*.cfg` files. The exact Trixie `binary_hooks` source then runs `cd binary` before executing the hook. Therefore, paths inside a binary hook are relative to the `binary/` directory: the hook's old `binary/boot/grub/grub.cfg` resolved to the incorrect nested path `binary/binary/boot/grub/grub.cfg`. The correct relative path is `boot/grub/grub.cfg` (subject to verifying the expected file exists in the generated image). The immediate failure was a working-directory/path-root mismatch, not hook ordering. Do not repeat the unsupported claim that the binary hook ran before `binary_grub_cfg`.
 
 References used for this incident:
 - https://live-team.pages.debian.net/live-manual/html/live-manual/customizing-contents.en.html
+- https://sources.debian.org/src/live-build/1%3A20250505%2Bdeb13u1/scripts/build/binary_grub_cfg
+- https://sources.debian.org/src/live-build/1%3A20250505%2Bdeb13u1/scripts/build/binary_hooks
 - https://sources.debian.org/src/live-build/1%3A20230502/scripts/build/binary_grub_cfg/
 - https://packages.debian.org/source/trixie/live-build
 - https://www.gnu.org/software/grub/manual/grub/
