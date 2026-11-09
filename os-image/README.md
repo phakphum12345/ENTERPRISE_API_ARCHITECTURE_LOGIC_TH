@@ -30,7 +30,7 @@ The script does not write to USB devices or internal disks.
 
 ## Boot and hardware validation
 
-- CI verifies ISO-9660 structure, kernel, initramfs, squashfs payload, checksum, and build metadata.
+- CI verifies ISO-9660 structure, kernel, initramfs, squashfs payload, checksum, build metadata, package inventory, and a QEMU/OVMF UEFI boot reaching the Research OS serial login.
 - QEMU/OVMF boot validation is a separate gate and must be reported separately from static image checks.
 - Physical ASUS Vivobook X1504VA validation is required before claiming hardware compatibility.
 - MediaTek MT7902, Intel UHD acceleration, VMD/storage, audio, touchpad, Wi-Fi, suspend, and power management remain unqualified until measured.
