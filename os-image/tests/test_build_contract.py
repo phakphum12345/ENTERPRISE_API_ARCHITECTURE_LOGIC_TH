@@ -56,6 +56,9 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn('echo "Using OVMF CODE: $OVMF_CODE"', script)
         self.assertIn('echo "Using OVMF VARS template: $OVMF_VARS"', script)
         self.assertIn("OVMF_VARS_4M.fd", script)
+        self.assertIn("RESEARCH_OS_GRUB_SERIAL=READY", script)
+        self.assertIn("RESEARCH_OS_LIVE_READY", script)
+        self.assertIn("qemu-debug.log", script)
         self.assertIn('cp -- "$OVMF_VARS" "$WORK/OVMF_VARS.fd"', script)
         self.assertIn('-drive if=pflash,format=raw,unit=0,readonly=on,file="$OVMF_CODE"', script)
         self.assertIn('-drive if=pflash,format=raw,unit=1,file="$WORK/OVMF_VARS.fd"', script)
@@ -65,9 +68,12 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         hook = (ROOT / "config/hooks/live/0200-enable-grub-serial-output.hook.binary").read_text(encoding="utf-8")
         self.assertIn('GRUB_CONFIG="boot/grub/grub.cfg"', hook)
         self.assertNotIn('GRUB_CONFIG="binary/boot/grub/grub.cfg"', hook)
+        self.assertLess(hook.index("insmod serial"), hook.index("serial --unit=0"))
+        self.assertLess(hook.index("insmod terminal"), hook.index("terminal_input console serial"))
         self.assertIn("serial --unit=0 --speed=115200", hook)
         self.assertIn("terminal_input console serial", hook)
         self.assertIn("terminal_output console serial", hook)
+        self.assertIn("RESEARCH_OS_GRUB_SERIAL=READY", hook)
         self.assertIn('cat "$GRUB_CONFIG"', hook)
 
     def test_package_inventory_and_metadata_use_real_delimiters(self):
