@@ -36,10 +36,10 @@ sealed record ServiceOptions(
 
         var portText = ReadOption(args, "--port")
             ?? Environment.GetEnvironmentVariable("RESEARCH_OS_V3_PORT")
-            ?? "8788";
-        if (!int.TryParse(portText, out var port) || port is < 1 or > 65535)
+            ?? "0";
+        if (!int.TryParse(portText, out var port) || port is < 0 or > 65535)
         {
-            throw new ArgumentOutOfRangeException(nameof(args), $"Invalid V3 service port: {portText}");
+            throw new ArgumentOutOfRangeException(nameof(args), $"Invalid V3 service port request: {portText}");
         }
 
         var dataDir = ReadOption(args, "--data-dir")
@@ -127,7 +127,7 @@ sealed class V3ServiceWorker : BackgroundService
 
         _logger.LogInformation("Research OS V3 root: {Root}", _options.Root);
         _logger.LogInformation("Research OS V3 data: {DataDir}", _options.DataDir);
-        _logger.LogInformation("Research OS V3 endpoint: http://127.0.0.1:{Port}", _options.Port);
+        _logger.LogInformation("Research OS V3 requested port: {Port} (0 means OS-assigned)", _options.Port);
 
         var startInfo = new ProcessStartInfo
         {
