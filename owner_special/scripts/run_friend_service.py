@@ -60,13 +60,13 @@ def main() -> None:
     except KeyboardInterrupt:
         pass
     finally:
+        service.close()
         if published:
             remove_endpoint(
                 "owner-friend",
                 directory=registry_dir,
                 pid=os.getpid(),
             )
-        service.close()
 
 
 if __name__ == "__main__":
