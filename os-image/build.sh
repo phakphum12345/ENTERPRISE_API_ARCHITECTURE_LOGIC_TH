@@ -95,9 +95,6 @@ grep -Eq '/terminal[.]mod$' "$DIST/grub-terminal-module-path.txt"
   sha256sum research-os-amd64.iso > SHA256SUMS
   chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
 )
-  sha256sum research-os-amd64.iso > SHA256SUMS
-  chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
-)
 
 python3 - "$DIST/SBOM.cdx.json" "$DIST/PACKAGE-INVENTORY.txt" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" <<'PY'
 import hashlib
