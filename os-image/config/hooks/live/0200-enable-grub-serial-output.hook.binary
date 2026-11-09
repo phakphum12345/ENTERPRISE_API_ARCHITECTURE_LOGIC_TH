@@ -13,9 +13,12 @@ TMP_CONFIG="$(mktemp)"
 trap 'rm -f "$TMP_CONFIG"' EXIT
 {
   printf '%s\n' \
+    'insmod serial' \
+    'insmod terminal' \
     'serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1' \
     'terminal_input console serial' \
-    'terminal_output console serial'
+    'terminal_output console serial' \
+    'echo RESEARCH_OS_GRUB_SERIAL=READY'
   cat "$GRUB_CONFIG"
 } > "$TMP_CONFIG"
 cat "$TMP_CONFIG" > "$GRUB_CONFIG"
