@@ -23,7 +23,8 @@ Outputs are written to `dist/`:
 - `research-os-amd64.iso`
 - `SHA256SUMS`
 - `build-metadata.json`
-- `SBOM-packages.txt` (installed package inventory)
+- `PACKAGE-INVENTORY.txt` (installed package inventory)
+- `SBOM.cdx.json` (CycloneDX 1.5 SBOM)
 - `iso-live-contents.txt`
 
 The script does not write to USB devices or internal disks.
