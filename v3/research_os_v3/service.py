@@ -138,7 +138,9 @@ class V3LocalService:
                     return
                 self._write_json(404, {"error": "not found"})
 
+        # Binding port 0 delegates allocation and bind atomically to the OS.
         server = ThreadingHTTPServer((self.host, self.port), Handler)
+        self.port = int(server.server_address[1])
         self._server = server
         return server
 
