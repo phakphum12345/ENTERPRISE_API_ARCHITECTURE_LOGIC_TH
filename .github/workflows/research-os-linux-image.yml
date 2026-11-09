@@ -1,0 +1,81 @@
+name: Research OS Linux Live Image
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "os-image/**"
+      - ".github/workflows/research-os-linux-image.yml"
+  push:
+    branches: [main]
+    paths:
+      - "os-image/**"
+      - ".github/workflows/research-os-linux-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-os-linux-image-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-live-iso:
+    name: Build and inspect x86_64 live ISO
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build in isolated Debian Trixie container
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          docker run --privileged --rm \
+            -e DEBIAN_SUITE=trixie \
+            -e SOURCE_SHA="$SOURCE_SHA" \
+            -e SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace/os-image \
+            debian:trixie bash ./build.sh
+
+      - name: Verify checksum and metadata
+        run: |
+          set -euo pipefail
+          cd os-image/dist
+          sha256sum --check SHA256SUMS
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path(".")
+          meta = json.loads((root / "build-metadata.json").read_text())
+          iso = root / "research-os-amd64.iso"
+          assert meta["product"] == "Research OS"
+          assert meta["architecture"] == "amd64"
+          assert meta["installer"] == "not-included"
+          assert meta["source_sha"] == "${{ github.sha }}"
+          assert meta["size_bytes"] == iso.stat().st_size
+          assert meta["sha256"] == hashlib.sha256(iso.read_bytes()).hexdigest()
+          assert meta["hardware_qualification"] == "not-performed"
+          print("RESEARCH_OS_IMAGE_METADATA=PASS")
+          PY
+
+      - name: Upload ISO and provenance
+        uses: actions/upload-artifact@v6
+        with:
+          name: research-os-live-iso-${{ github.sha }}
+          path: |
+            os-image/dist/research-os-amd64.iso
+            os-image/dist/SHA256SUMS
+            os-image/dist/build-metadata.json
+            os-image/dist/iso-live-contents.txt
+          if-no-files-found: error
+          retention-days: 14
