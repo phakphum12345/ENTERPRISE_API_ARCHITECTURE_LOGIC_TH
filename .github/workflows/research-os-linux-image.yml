@@ -1,6 +1,7 @@
 name: Research OS Linux Live Image
 
 on:
+  workflow_call:
   pull_request:
     branches: [main]
     paths:
