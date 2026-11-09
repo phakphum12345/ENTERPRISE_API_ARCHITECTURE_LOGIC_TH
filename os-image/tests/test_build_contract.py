@@ -45,6 +45,15 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("not an installer", readme)
         self.assertIn("--debian-installer none", script)
 
+    def test_uefi_smoke_test_discovers_runner_specific_ovmf_paths(self):
+        script = (ROOT / "test-uefi-qemu.sh").read_text(encoding="utf-8")
+        self.assertIn("/usr/share/edk2/ovmf/OVMF_CODE_4M.fd", script)
+        self.assertIn("/usr/share/qemu/OVMF_CODE_4M.fd", script)
+        self.assertIn("find /usr/share -type f", script)
+        self.assertIn("OVMF_CODE*.fd", script)
+        self.assertIn('echo "Using OVMF UEFI firmware: $OVMF_CODE"', script)
+        self.assertIn('-bios "$OVMF_CODE"', script)
+
     def test_build_script_contains_no_physical_disk_write_commands(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8").lower()
         forbidden = (
