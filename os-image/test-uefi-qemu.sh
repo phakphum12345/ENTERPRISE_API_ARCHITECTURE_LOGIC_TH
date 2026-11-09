@@ -26,11 +26,11 @@ fi
 if [[ -z "$OVMF_CODE" ]]; then
   while IFS= read -r candidate; do
     if [[ -s "$candidate" ]]; then OVMF_CODE="$candidate"; break; fi
-  done < <(find /usr/share \\( -type f -o -type l \\) \\( -name 'OVMF_CODE*.fd' -o -name 'OVMF.fd' \\) -print 2>/dev/null | sort)
+  done < <(find /usr/share \( -type f -o -type l \) \( -name 'OVMF_CODE*.fd' -o -name 'OVMF.fd' \) -print 2>/dev/null | sort)
 fi
 if [[ -z "$OVMF_CODE" || ! -s "$OVMF_CODE" ]]; then
   echo "OVMF UEFI firmware was not found. Installed candidates:" >&2
-  find /usr/share \\( -type f -o -type l \\) \\( -iname '*ovmf*' -o -iname '*edk2*' \\) -print 2>/dev/null | head -80 >&2 || true
+  find /usr/share \( -type f -o -type l \) \( -iname '*ovmf*' -o -iname '*edk2*' \) -print 2>/dev/null | head -80 >&2 || true
   exit 2
 fi
 echo "Using OVMF UEFI firmware: $OVMF_CODE"
