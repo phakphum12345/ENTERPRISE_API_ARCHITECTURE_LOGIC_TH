@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cloud and service entrypoint for Research OS API with browser-safe CORS headers."""
+"""Cloud and local entrypoint for Research OS API with browser-safe CORS headers."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import os
 from http import HTTPStatus
 from http.server import ThreadingHTTPServer
 
+from service_registry import publish_endpoint, registry_directory, remove_endpoint
 from v2_server import V2ResearchOSHandler
 
 
@@ -46,16 +47,44 @@ class CloudResearchOSHandler(V2ResearchOSHandler):
 
 
 def main() -> int:
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8787"))
+    # Hosted deployments supply PORT. Local launchers default to 0 so the OS
+    # atomically assigns a free port during the actual listen() call.
+    host = os.getenv("HOST") or os.getenv("RESEARCH_OS_API_HOST") or "127.0.0.1"
+    port_value = os.getenv("PORT") or os.getenv("RESEARCH_OS_API_PORT") or "0"
+    port = int(port_value)
     server = ThreadingHTTPServer((host, port), CloudResearchOSHandler)
-    print(f"Research OS primary API listening on http://{host}:{port}")
+    actual_host, actual_port = server.server_address[:2]
+    registry_path = registry_directory()
+    published = False
+    if actual_host in {"127.0.0.1", "::1", "localhost"}:
+        endpoint = publish_endpoint(
+            "research-os-api",
+            str(actual_host),
+            int(actual_port),
+            directory=registry_path,
+        )
+        published = True
+        print(
+            f"Research OS API READY {endpoint['base_url']} registry={registry_path}",
+            flush=True,
+        )
+    else:
+        print(
+            f"Research OS API listening on {actual_host}:{actual_port}",
+            flush=True,
+        )
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
+        if published:
+            remove_endpoint(
+                "research-os-api",
+                directory=registry_path,
+                pid=os.getpid(),
+            )
     return 0
 
 
