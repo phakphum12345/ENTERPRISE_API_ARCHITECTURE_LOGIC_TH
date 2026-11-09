@@ -13,7 +13,9 @@ $PackagedServiceDir = Join-Path $RepoRoot 'service_host'
 $PackagedServiceExe = Join-Path $PackagedServiceDir 'ResearchOS.ServiceHost.exe'
 $ServiceExe = Join-Path $PublishDir 'ResearchOS.ServiceHost.exe'
 $BundledPython = Join-Path $RepoRoot 'runtime\python\python.exe'
-$ApiPort = 8787
+$ApiPort = 0
+$RegistryDir = Join-Path $DataDir 'run\services'
+$ApiEndpointFile = Join-Path $RegistryDir 'research-os-api.json'
 
 function Test-Admin {
   $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -41,7 +43,24 @@ function Wait-ServiceState([string]$Desired, [int]$Seconds = 20) {
   throw "Service did not reach state $Desired within $Seconds seconds."
 }
 
-function Get-PortListeners([int]$Port = $ApiPort) {
+function Get-CurrentApiPort {
+  if (-not (Test-Path $ApiEndpointFile)) { return 0 }
+  try {
+    $endpoint = Get-Content -Path $ApiEndpointFile -Raw | ConvertFrom-Json
+    if ($endpoint.schema_version -eq 1 -and
+        $endpoint.service -eq 'research-os-api' -and
+        $endpoint.host -in @('127.0.0.1', '::1', 'localhost') -and
+        [int]$endpoint.port -ge 1 -and
+        [int]$endpoint.port -le 65535) {
+      return [int]$endpoint.port
+    }
+  } catch { }
+  return 0
+}
+
+function Get-PortListeners([int]$Port = 0) {
+  if ($Port -le 0) { $Port = Get-CurrentApiPort }
+  if ($Port -le 0) { return @() }
   return @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
 }
 
@@ -83,7 +102,7 @@ function Test-ResearchOsApiProcess([int]$ProcessId) {
     return $true
   }
 
-  Write-Warning "PID $ProcessId is listening on port $ApiPort but does not look like a Research OS API process. It will not be terminated."
+  Write-Warning "PID $ProcessId is listening on the discovered Research OS endpoint but does not look like a Research OS API process. It will not be terminated."
   Write-Warning "Executable : $executablePath"
   Write-Warning "CommandLine: $commandLine"
   return $false
@@ -110,7 +129,7 @@ function Stop-ResearchOsApiListener([int]$Seconds = 15) {
   do {
     $remaining = Get-PortListeners
     if (-not $remaining) {
-      Write-Host "Research OS API port $ApiPort is free."
+      Write-Host "Research OS API listener is free on its discovered endpoint."
       return
     }
     Start-Sleep -Milliseconds 500
@@ -120,9 +139,9 @@ function Stop-ResearchOsApiListener([int]$Seconds = 15) {
   foreach ($listener in $remaining) {
     $pidRemaining = [int]$listener.OwningProcess
     $process = Get-CimInstance Win32_Process -Filter "ProcessId=$pidRemaining" -ErrorAction SilentlyContinue
-    Write-Warning "Port $ApiPort listener remains: PID=$pidRemaining Executable=$($process.ExecutablePath) CommandLine=$($process.CommandLine)"
+    Write-Warning "Discovered API listener remains: PID=$pidRemaining Executable=$($process.ExecutablePath) CommandLine=$($process.CommandLine)"
   }
-  throw "Port $ApiPort still has a listener after Research OS service shutdown."
+  throw "Discovered Research OS API listener remains after service shutdown."
 }
 
 function Stop-ResearchOsServiceAndApi {
@@ -165,7 +184,7 @@ switch ($Action) {
     Write-Host "Research OS Service: $($svc.Status)"
     Write-Host "Service name       : $ServiceName"
     Write-Host "Startup            : $startMode"
-    Write-Host "Local API          : http://127.0.0.1:$ApiPort"
+    Write-Host "Local API          : dynamically discovered from $ApiEndpointFile"
     exit 0
   }
 
@@ -212,11 +231,12 @@ switch ($Action) {
     New-Item -ItemType Directory -Force -Path (Join-Path $DataDir 'database') | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $DataDir 'artifacts') | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $DataDir 'backups') | Out-Null
+    New-Item -ItemType Directory -Force -Path $RegistryDir | Out-Null
 
     [Environment]::SetEnvironmentVariable('RESEARCH_OS_REPO_ROOT', $RepoRoot, 'Machine')
     [Environment]::SetEnvironmentVariable('RESEARCH_OS_DATA_DIR', $DataDir, 'Machine')
     [Environment]::SetEnvironmentVariable('RESEARCH_OS_PYTHON_EXE', $python, 'Machine')
-    [Environment]::SetEnvironmentVariable('RESEARCH_OS_API_HOST', '0.0.0.0', 'Machine')
+    [Environment]::SetEnvironmentVariable('RESEARCH_OS_API_HOST', '127.0.0.1', 'Machine')
     [Environment]::SetEnvironmentVariable('RESEARCH_OS_API_PORT', "$ApiPort", 'Machine')
 
     $existing = Get-ServiceSafe
@@ -251,7 +271,7 @@ switch ($Action) {
 
     Write-Host 'Research OS Service installed and started.'
     Write-Host "Service : $ServiceName"
-    Write-Host "API     : http://127.0.0.1:$ApiPort"
+    Write-Host "API     : OS-assigned endpoint published to $ApiEndpointFile"
     Write-Host "Data    : $DataDir"
     Write-Host "Runtime : $python"
     Write-Host 'Recovery: restart after 5s, 10s, then 30s'
