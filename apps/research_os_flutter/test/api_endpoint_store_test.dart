@@ -10,10 +10,11 @@ void main() {
     expect(ApiEndpointStore.buildDefault, expected);
   });
 
-  test('local endpoint remains a valid explicit profile value', () {
+  test('dynamic loopback endpoint is accepted without a fixed port', () {
     expect(
-      ApiEndpointStore.normalize(ApiEndpointStore.localDefault),
-      ApiEndpointStore.localDefault,
+      ApiEndpointStore.normalize('http://127.0.0.1:43127'),
+      'http://127.0.0.1:43127',
     );
   });
+
 }
