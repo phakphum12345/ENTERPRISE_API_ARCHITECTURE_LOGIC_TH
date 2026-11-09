@@ -6,14 +6,17 @@ import 'package:flutter/widgets.dart';
 import 'src/api/v3_api.dart';
 import 'src/research_os_v3_app.dart';
 import 'src/startup_probe.dart';
+import 'src/api/service_endpoint_registry.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const baseUrl = String.fromEnvironment(
+  const configuredBaseUrl = String.fromEnvironment(
     'RESEARCH_OS_V3_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8788',
   );
+  final baseUrl = configuredBaseUrl.trim().isNotEmpty
+      ? configuredBaseUrl.trim()
+      : await discoverV3Endpoint() ?? '';
   final rawUser = Platform.environment['RESEARCH_OS_V3_USER_ID'] ??
       Platform.environment['USERNAME'] ??
       Platform.environment['USER'] ??
