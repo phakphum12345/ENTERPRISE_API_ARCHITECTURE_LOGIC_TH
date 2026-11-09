@@ -39,7 +39,9 @@ apt-get install -y --no-install-recommends \
   file \
   dpkg-dev
 
-lb clean --purge || true
+test -f config/package-lists/researchos.list.chroot
+ test -f config/includes.chroot/etc/os-release
+lb clean --purge
 
 lb config \
   --distribution "$DEBIAN_SUITE" \
