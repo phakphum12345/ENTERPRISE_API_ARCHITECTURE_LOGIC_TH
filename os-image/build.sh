@@ -49,7 +49,7 @@ lb config \
   --binary-images iso-hybrid \
   --bootloaders "grub-pc,grub-efi" \
   --archive-areas "main contrib non-free-firmware" \
-  --apt-recommends true \
+  --apt-recommends false \
   --debian-installer none \
   --checksums sha256 \
   --iso-application "Research OS" \
