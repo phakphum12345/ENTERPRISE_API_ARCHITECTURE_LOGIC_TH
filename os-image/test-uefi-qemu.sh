@@ -66,6 +66,7 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 LOG="$WORK/serial.log"
+QEMU_DEBUG="$WORK/qemu-debug.log"
 cp -- "$OVMF_VARS" "$WORK/OVMF_VARS.fd"
 set +e
 timeout 180s qemu-system-x86_64 \
@@ -78,7 +79,8 @@ timeout 180s qemu-system-x86_64 \
   -display none \
   -serial "file:$LOG" \
   -monitor none \
-  -no-reboot
+  -no-reboot \
+  -d guest_errors,cpu_reset -D "$QEMU_DEBUG"
 QEMU_STATUS=$?
 set -e
 
@@ -89,10 +91,20 @@ if [[ "$QEMU_STATUS" -ne 0 && "$QEMU_STATUS" -ne 124 ]]; then
   cat "$LOG" >&2 || true
   exit 1
 fi
-if ! grep -Eqi 'Research OS|login:' "$LOG"; then
-  echo "UEFI guest did not reach the Research OS serial login." >&2
+if ! grep -Fq 'RESEARCH_OS_GRUB_SERIAL=READY' "$LOG"; then
+  echo "UEFI firmware started the DVD boot entry, but the GRUB serial marker was not observed." >&2
   cat "$LOG" >&2 || true
+  if [[ -s "$QEMU_DEBUG" ]]; then tail -n 200 "$QEMU_DEBUG" >&2; fi
   exit 1
 fi
+echo "RESEARCH_OS_GRUB_SERIAL=PASS"
+
+if ! grep -Fq 'RESEARCH_OS_LIVE_READY=1' "$LOG"; then
+  echo "GRUB serial output was reached, but the live graphical readiness marker was not observed." >&2
+  cat "$LOG" >&2 || true
+  if [[ -s "$QEMU_DEBUG" ]]; then tail -n 200 "$QEMU_DEBUG" >&2; fi
+  exit 1
+fi
+echo "RESEARCH_OS_LIVE_READY=PASS"
 
 echo "RESEARCH_OS_QEMU_UEFI_BOOT=PASS"
