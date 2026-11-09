@@ -10,15 +10,11 @@ class LoginPage extends StatefulWidget {
   const LoginPage({
     required this.apiClient,
     required this.onAuthenticated,
-    required this.onConnectionChanged,
-    required this.connectionProfile,
     super.key,
   });
 
   final ResearchOSApiClient apiClient;
   final VoidCallback onAuthenticated;
-  final Future<void> Function(String baseUrl) onConnectionChanged;
-  final String connectionProfile;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -34,12 +30,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-
-    final currentProfile =
-        ApiEndpointStore.profileForUrl(widget.apiClient.baseUrl);
-    _selectedPort = currentProfile == ApiEndpointStore.connectionOwnerSpecial
-        ? ApiEndpointStore.port2Label
-        : ApiEndpointStore.port1Label;
 
     _loadProviders();
   }
@@ -147,28 +137,6 @@ class _LoginPageState extends State<LoginPage> {
 
   String _selectedLoginMethod = '';
   String _selectedUserLevel = '';
-  String _selectedPort = ApiEndpointStore.port1Label;
-
-  Future<void> _selectPort(String label) async {
-    final profile = ApiEndpointStore.profileForPortLabel(label);
-    final currentProfile =
-        ApiEndpointStore.profileForUrl(widget.apiClient.baseUrl);
-
-    if (profile == currentProfile) {
-      if (mounted) {
-        setState(() => _selectedPort = label);
-      }
-      return;
-    }
-
-    await widget.onConnectionChanged(
-      ApiEndpointStore.profileUrl(profile),
-    );
-
-    if (mounted) {
-      setState(() => _selectedPort = label);
-    }
-  }
 
   String _providerIdForLoginMethod(String method) {
     switch (method) {
@@ -289,39 +257,6 @@ class _LoginPageState extends State<LoginPage> {
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 28),
-
-                        // --------------------------------------------------
-                        // PORT
-                        // --------------------------------------------------
-                        const Text(
-                          'PORT',
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          key: const ValueKey('login-port-dropdown'),
-                          initialValue: _selectedPort,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                          items: const <DropdownMenuItem<String>>[
-                            DropdownMenuItem<String>(
-                              value: ApiEndpointStore.port1Label,
-                              child: Text(ApiEndpointStore.port1Label),
-                            ),
-                            DropdownMenuItem<String>(
-                              value: ApiEndpointStore.port2Label,
-                              child: Text(ApiEndpointStore.port2Label),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              _selectPort(value);
-                            }
-                          },
-                        ),
-
-                        const SizedBox(height: 20),
 
                         // --------------------------------------------------
                         // LOGIN
