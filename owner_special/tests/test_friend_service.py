@@ -9,9 +9,41 @@ from research_os_friend import OwnerFriendService
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(REPOSITORY_ROOT) not in __import__("sys").path:
+    __import__("sys").path.insert(0, str(REPOSITORY_ROOT))
+
+from tools.research_os_api.service_registry import publish_endpoint, read_endpoint, remove_endpoint
 
 
 class OwnerFriendServiceTests(unittest.TestCase):
+    def test_port_zero_service_publishes_its_actual_bound_endpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = root / "registry"
+            service = OwnerFriendService(
+                owner_id="owner",
+                host="127.0.0.1",
+                port=0,
+                data_root=root / "data",
+                repository_root=REPOSITORY_ROOT,
+            )
+            service.start()
+            try:
+                endpoint = publish_endpoint(
+                    "owner-friend",
+                    service.host,
+                    service.port,
+                    directory=registry,
+                )
+                self.assertEqual(endpoint["port"], service.httpd.server_address[1])
+                self.assertEqual(read_endpoint("owner-friend", directory=registry), endpoint)
+                status, health = self._request(endpoint["base_url"] + "/owner/health", owner=None)
+                self.assertEqual(status, 200)
+                self.assertTrue(health["loopback_only"])
+                self.assertTrue(remove_endpoint("owner-friend", directory=registry, pid=endpoint["pid"]))
+            finally:
+                service.close()
+
     def _request(
         self,
         url: str,
