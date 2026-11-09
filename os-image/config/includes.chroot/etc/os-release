@@ -1,0 +1,10 @@
+NAME="Research OS"
+PRETTY_NAME="Research OS 0.1.0 Development Live"
+ID=researchos
+ID_LIKE=debian
+VERSION_ID="0.1.0-dev"
+VERSION="0.1.0 Development Live"
+VERSION_CODENAME=trixie
+HOME_URL="https://github.com/phakphum12345/ENTERPRISE_API_ARCHITECTURE_LOGIC_TH"
+SUPPORT_URL="https://github.com/phakphum12345/ENTERPRISE_API_ARCHITECTURE_LOGIC_TH/issues"
+BUG_REPORT_URL="https://github.com/phakphum12345/ENTERPRISE_API_ARCHITECTURE_LOGIC_TH/issues"
