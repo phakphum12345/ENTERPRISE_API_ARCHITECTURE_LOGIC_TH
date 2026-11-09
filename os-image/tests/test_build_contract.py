@@ -63,7 +63,8 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
 
     def test_grub_serial_output_is_enabled_without_disabling_video_console(self):
         hook = (ROOT / "config/hooks/live/0200-enable-grub-serial-output.hook.binary").read_text(encoding="utf-8")
-        self.assertIn('GRUB_CONFIG="binary/boot/grub/grub.cfg"', hook)
+        self.assertIn('GRUB_CONFIG="boot/grub/grub.cfg"', hook)
+        self.assertNotIn('GRUB_CONFIG="binary/boot/grub/grub.cfg"', hook)
         self.assertIn("serial --unit=0 --speed=115200", hook)
         self.assertIn("terminal_input console serial", hook)
         self.assertIn("terminal_output console serial", hook)
