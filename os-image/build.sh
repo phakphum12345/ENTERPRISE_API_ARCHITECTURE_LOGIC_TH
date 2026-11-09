@@ -60,14 +60,20 @@ lb config \
 
 lb build
 
-ISO_SOURCE="$(find "$ROOT/binary" -maxdepth 1 -type f -name '*.iso' -print -quit)"
+# live-build writes the binary ISO in the project working directory
+# (for example, live-image-amd64.hybrid.iso), not under binary/.
+# Accept the documented root output and the binary/ layout used by some
+# live-build configurations, while excluding our own dist/ copy.
+DIST="$ROOT/dist"
+mkdir -p "$DIST"
+ISO_SOURCE="$(find "$ROOT" -maxdepth 2 -type f -name '*.iso' \
+  ! -path "$DIST/*" -print -quit)"
 if [[ -z "$ISO_SOURCE" || ! -s "$ISO_SOURCE" ]]; then
-  echo "live-build did not produce a non-empty ISO image." >&2
+  echo "live-build did not produce a non-empty ISO image in $ROOT or $ROOT/binary." >&2
+  find "$ROOT" -maxdepth 2 -type f -name '*.iso' -print >&2 || true
   exit 1
 fi
 
-DIST="$ROOT/dist"
-mkdir -p "$DIST"
 cp -- "$ISO_SOURCE" "$DIST/research-os-amd64.iso"
 xorriso -indev "$DIST/research-os-amd64.iso" -ls /live > "$DIST/iso-live-contents.txt" 2>&1
 grep -Eq 'vmlinuz' "$DIST/iso-live-contents.txt"
