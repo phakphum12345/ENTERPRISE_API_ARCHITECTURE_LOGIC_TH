@@ -33,6 +33,7 @@ class _DeveloperAccessPageState extends State<DeveloperAccessPage> {
       _error = null;
     });
     try {
+      await widget.client.initialize();
       final session = await widget.client.getSession();
       final results = await Future.wait<Map<String, dynamic>>(<Future<Map<String, dynamic>>>[
         widget.client.getOwnerRequests(status: 'pending'),
