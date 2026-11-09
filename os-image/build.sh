@@ -87,7 +87,14 @@ grep -Eq 'filesystem.squashfs' "$DIST/iso-live-contents.txt"
 # Verify the actual ISO carries both modules before attempting UEFI boot.
 xorriso -indev "$DIST/research-os-amd64.iso" -find / -name serial.mod > "$DIST/grub-serial-module-path.txt" 2>&1
 xorriso -indev "$DIST/research-os-amd64.iso" -find / -name terminal.mod > "$DIST/grub-terminal-module-path.txt" 2>&1
-grep -Eq '/serial\.mod  cd "$DIST"
+grep -Eq '/serial[.]mod$' "$DIST/grub-serial-module-path.txt"
+grep -Eq '/terminal[.]mod$' "$DIST/grub-terminal-module-path.txt"
+
+(
+  cd "$DIST"
+  sha256sum research-os-amd64.iso > SHA256SUMS
+  chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
+)
   sha256sum research-os-amd64.iso > SHA256SUMS
   chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
 )
@@ -144,8 +151,8 @@ bom = {
 pathlib.Path(output).write_text(json.dumps(bom, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
 PY
 
-GRUB_EFI_VERSION="$(dpkg-query -W -f='\${Version}' grub-efi-amd64-bin)"
-GRUB_COMMON_VERSION="$(dpkg-query -W -f='\${Version}' grub-common)"
+GRUB_EFI_VERSION="$(dpkg-query -W -f='${Version}' grub-efi-amd64-bin)"
+GRUB_COMMON_VERSION="$(dpkg-query -W -f='${Version}' grub-common)"
 
 python3 - "$DIST/build-metadata.json" "$DEBIAN_SUITE" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$DIST/research-os-amd64.iso" "$GRUB_EFI_VERSION" "$GRUB_COMMON_VERSION" <<'PY'
 import hashlib
