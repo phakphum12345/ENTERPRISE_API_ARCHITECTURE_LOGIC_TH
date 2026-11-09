@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:research_os_owner_app/src/service_endpoint_registry.dart';
+import 'package:research_os_owner_special/src/service_endpoint_registry.dart';
 
 void main() {
   test('discovers healthy Owner Friend service from registry', () async {
