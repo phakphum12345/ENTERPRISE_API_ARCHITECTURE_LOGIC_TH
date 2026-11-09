@@ -14,6 +14,8 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("--bootloaders", script)
         self.assertIn("grub-efi", script)
         self.assertIn("--debian-installer none", script)
+        self.assertIn("lb clean --purge", script)
+        self.assertNotIn("lb clean --purge || true", script)
 
     def test_live_kernel_initramfs_and_rootfs_are_required(self):
         packages = (ROOT / "config/package-lists/researchos.list.chroot").read_text(encoding="utf-8")
