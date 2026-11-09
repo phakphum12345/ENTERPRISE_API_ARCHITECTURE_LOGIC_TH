@@ -87,6 +87,8 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("After=display-manager.service", service)
         self.assertIn("systemctl is-active --quiet display-manager.service", service)
         self.assertIn("RESEARCH_OS_LIVE_READY=1", service)
+        self.assertIn("/lib/systemd/system/graphical.target", hook)
+        self.assertIn("default.target", hook)
         self.assertIn("graphical.target.wants", hook)
         self.assertIn("research-os-live-ready.service", hook)
 
