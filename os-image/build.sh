@@ -86,7 +86,7 @@ grep -Eq 'filesystem.squashfs' "$DIST/iso-live-contents.txt"
 (
   cd "$DIST"
   sha256sum research-os-amd64.iso > SHA256SUMS
-  chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\\t${Version}\\n' | sort > PACKAGE-INVENTORY.txt
+  chroot "$ROOT/chroot" dpkg-query -W -f='${binary:Package}\t${Version}\n' | sort > PACKAGE-INVENTORY.txt
 )
 
 python3 - "$DIST/SBOM.cdx.json" "$DIST/PACKAGE-INVENTORY.txt" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" <<'PY'
@@ -179,7 +179,7 @@ metadata = {
     "hardware_qualification": "not-performed",
     "scope": "live image build metadata; not proof of boot or hardware compatibility",
 }
-pathlib.Path(output).write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+pathlib.Path(output).write_text(json.dumps(metadata, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
 PY
 
 echo "RESEARCH_OS_ISO_BUILD=PASS"
