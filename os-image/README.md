@@ -11,6 +11,10 @@ This subproject builds an independently bootable live ISO for x86_64 UEFI system
 
 The first milestone is a **live environment**, not an installer to an internal disk. It must not repartition, format, or install to a disk. An installation workflow, update/recovery strategy, Research OS Control Center integration, and hardware qualification are separate gates and are not claimed complete here.
 
+## Troubleshooting protocol
+
+All failed builds, CI checks, and boot-validation issues must follow the [Documentation-First Troubleshooting Protocol](docs/TROUBLESHOOTING_PROTOCOL.md). Read the official documentation and exact-version implementation before changing code; preserve the READ → ANALYZE → PLAN → MODIFY → TEST → AUDIT sequence and keep the release gate fail-closed.
+
 ## Build
 
 Run inside a clean Debian Trixie environment as root:
