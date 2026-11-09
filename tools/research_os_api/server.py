@@ -42,6 +42,7 @@ from multi_login import MultiLoginError, begin_login
 from multi_login_runtime import MultiLoginRuntimeError, begin_runtime_login, complete_runtime_login
 from oauth_handoff import consume_handoff, create_handoff
 from session_registry import get_session, list_sessions, mark_revoked
+from service_registry import publish_endpoint, registry_directory, remove_endpoint
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # The API supports both repository-root module execution and direct execution
 # from tools/research_os_api (the latter is used by the Windows/local launcher).
@@ -905,16 +906,32 @@ class ResearchOSHandler(BaseHTTPRequestHandler):
 def main() -> int:
     parser = argparse.ArgumentParser(description="Research OS provider-agnostic HTTP API")
     parser.add_argument("--host", default=os.getenv("RESEARCH_OS_API_HOST", "127.0.0.1"))
-    parser.add_argument("--port", type=int, default=int(os.getenv("RESEARCH_OS_API_PORT", "8787")))
+    parser.add_argument("--port", type=int, default=int(os.getenv("RESEARCH_OS_API_PORT", "0")))
     args = parser.parse_args()
+    # Port 0 is bound by the OS in the same operation that creates the listener.
     server = ThreadingHTTPServer((args.host, args.port), ResearchOSHandler)
-    print(f"Research OS listening on http://{args.host}:{args.port}")
+    actual_host, actual_port = server.server_address[:2]
+    registry_dir = registry_directory()
+    published = False
+    if actual_host in {"127.0.0.1", "::1", "localhost"}:
+        endpoint = publish_endpoint(
+            "research-os-api",
+            str(actual_host),
+            int(actual_port),
+            directory=registry_dir,
+        )
+        published = True
+        print(f"Research OS READY {endpoint['base_url']}", flush=True)
+    else:
+        print(f"Research OS listening on {actual_host}:{actual_port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         return 0
     finally:
         server.server_close()
+        if published:
+            remove_endpoint("research-os-api", directory=registry_dir, pid=os.getpid())
 
 
 if __name__ == "__main__":
