@@ -1,8 +1,8 @@
 param(
   [string]$DataDir = "$env:USERPROFILE\ResearchOSData",
-  [string]$HostAddress = "0.0.0.0",
-  [int]$Port = 8787,
-  [int]$FriendPort = 8790,
+  [string]$HostAddress = "127.0.0.1",
+  [int]$Port = 0,
+  [int]$FriendPort = 0,
   [ValidateSet("gemini", "mock", "local", "openai-compatible", "anthropic")]
   [string]$Provider = "gemini",
   [switch]$Background
@@ -31,7 +31,9 @@ $FriendOutLog = Join-Path $LogDir "research-os-friend.out.log"
 $FriendErrLog = Join-Path $LogDir "research-os-friend.err.log"
 $FriendDataDir = Join-Path $DataDir "owner-friend"
 $FriendAuditPath = Join-Path $LogDir "research-os-friend.audit.jsonl"
-$FriendUrl = "http://127.0.0.1:$FriendPort"
+$RegistryDir = Join-Path $RunDir "services"
+$FriendEndpointFile = Join-Path $RegistryDir "owner-friend.json"
+$FriendUrl = $null
 
 if (-not (Test-Path $ApiDir)) {
   throw "Research OS API directory not found: $ApiDir"
@@ -52,20 +54,47 @@ if (-not (Test-Path $FriendScript)) {
 ) | ForEach-Object { New-Item -ItemType Directory -Force -Path $_ | Out-Null }
 
 $env:RESEARCH_OS_DATA_DIR = $DataDir
+$env:RESEARCH_OS_SERVICE_REGISTRY_DIR = $RegistryDir
+New-Item -ItemType Directory -Force -Path $RegistryDir | Out-Null
 $env:RESEARCH_OS_CONVERSATION_STORE = Join-Path $DataDir "sessions\conversations.json"
 $env:RESEARCH_OS_PROVIDER = $Provider
 $env:RESEARCH_OS_API_HOST = $HostAddress
 $env:RESEARCH_OS_API_PORT = "$Port"
-$env:RESEARCH_OS_FRIEND_URL = $FriendUrl
 $env:RESEARCH_OS_FRIEND_OWNER = "owner"
 $env:RESEARCH_OS_AI_ROUTE = "friend"
 $env:HOST = $HostAddress
 $env:PORT = "$Port"
 
-function Test-FriendHealth {
+function Get-FriendEndpoint {
+  if (-not (Test-Path $FriendEndpointFile)) { return $null }
   try {
-    $health = Invoke-RestMethod "$FriendUrl/owner/health" -TimeoutSec 2
-    return ($health.status -eq "ok")
+    $endpoint = Get-Content -Path $FriendEndpointFile -Raw | ConvertFrom-Json
+    if ($endpoint.schema_version -ne 1 -or
+        $endpoint.service -ne "owner-friend" -or
+        $endpoint.host -ne "127.0.0.1" -or
+        [int]$endpoint.port -lt 1 -or
+        [int]$endpoint.port -gt 65535 -or
+        [string]::IsNullOrWhiteSpace([string]$endpoint.base_url)) {
+      return $null
+    }
+    $owner = Get-Process -Id ([int]$endpoint.pid) -ErrorAction SilentlyContinue
+    if (-not $owner) { return $null }
+    return $endpoint
+  } catch {
+    return $null
+  }
+}
+
+function Test-FriendHealth {
+  $endpoint = Get-FriendEndpoint
+  if (-not $endpoint) { return $false }
+  try {
+    $health = Invoke-RestMethod "$($endpoint.base_url)/owner/health" -TimeoutSec 2
+    if ($health.status -eq "ok") {
+      $script:FriendUrl = [string]$endpoint.base_url
+      return $true
+    }
+    return $false
   } catch {
     return $false
   }
@@ -84,6 +113,7 @@ function Start-FriendService {
       "--owner-id", "owner",
       "--host", "127.0.0.1",
       "--port", "$FriendPort",
+      "--registry-dir", $RegistryDir,
       "--data-root", $FriendDataDir,
       "--audit-path", $FriendAuditPath,
       "--repository-root", $RepoRoot
@@ -129,9 +159,8 @@ Write-Host ""
 Write-Host "Research OS Local API + Friend Service"
 Write-Host "Data directory : $DataDir"
 Write-Host "Provider       : $Provider"
-Write-Host "Friend URL     : $FriendUrl"
-Write-Host "Local API URL  : http://127.0.0.1:$Port"
-Write-Host "LAN API URL    : http://<WINDOWS-IP>:$Port"
+Write-Host "Friend URL     : resolved dynamically after service startup"
+Write-Host "Local API      : OS-assigned TCP port (registry discovery)"
 Write-Host ""
 Write-Host "Friend Service is a required local dependency for RESEARCH_OS_AI_ROUTE=friend."
 Write-Host "Secrets are NOT stored by this script."
@@ -139,6 +168,11 @@ Write-Host "Set GEMINI_API_KEY / RESEARCH_OS_GEMINI_API_KEY in your Windows envi
 Write-Host ""
 
 $friendProcess = Start-FriendService
+if (-not (Test-FriendHealth)) {
+  throw "Friend Service did not publish a healthy dynamic endpoint. See $FriendErrLog"
+}
+$env:RESEARCH_OS_FRIEND_URL = $FriendUrl
+Write-Host "Friend Service URL: $FriendUrl"
 
 if ($Background) {
   if (Test-Path $PidFile) {
