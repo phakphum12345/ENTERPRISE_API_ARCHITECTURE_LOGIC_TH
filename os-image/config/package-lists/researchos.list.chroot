@@ -28,6 +28,7 @@ efibootmgr
 mokutil
 dmidecode
 lshw
-firmware-linux
+firmware-intel-graphics
+firmware-iwlwifi
 firmware-mediatek
 firmware-misc-nonfree
