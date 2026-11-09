@@ -93,7 +93,7 @@ components = []
 for line in inventory:
     if not line.strip():
         continue
-    name, version = line.split("\\t", 1)
+    name, version = line.split(chr(9), 1)
     package_name, _, architecture = name.partition(":")
     purl = "pkg:deb/debian/" + quote(package_name, safe=".+-") + "@" + quote(version, safe=".+-")
     if architecture:
@@ -127,7 +127,7 @@ bom = {
     },
     "components": components,
 }
-pathlib.Path(output).write_text(json.dumps(bom, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+pathlib.Path(output).write_text(json.dumps(bom, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
 PY
 
 python3 - "$DIST/build-metadata.json" "$DEBIAN_SUITE" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$DIST/research-os-amd64.iso" <<'PY'
