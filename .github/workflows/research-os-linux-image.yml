@@ -78,6 +78,12 @@ jobs:
           assert meta["source_sha"] == "${{ github.sha }}"
           assert meta["size_bytes"] == iso.stat().st_size
           assert meta["sha256"] == hashlib.sha256(iso.read_bytes()).hexdigest()
+          sbom = root / meta["sbom"]
+          inventory = root / meta["package_inventory"]
+          assert sbom.is_file() and inventory.is_file()
+          assert meta["sbom_sha256"] == hashlib.sha256(sbom.read_bytes()).hexdigest()
+          assert meta["package_inventory_sha256"] == hashlib.sha256(inventory.read_bytes()).hexdigest()
+          assert json.loads(sbom.read_text())["bomFormat"] == "CycloneDX"
           assert meta["hardware_qualification"] == "not-performed"
           print("RESEARCH_OS_IMAGE_METADATA=PASS")
           PY
@@ -91,6 +97,7 @@ jobs:
             os-image/dist/SHA256SUMS
             os-image/dist/build-metadata.json
             os-image/dist/iso-live-contents.txt
-            os-image/dist/SBOM-packages.txt
+            os-image/dist/SBOM.cdx.json
+            os-image/dist/PACKAGE-INVENTORY.txt
           if-no-files-found: error
           retention-days: 14
