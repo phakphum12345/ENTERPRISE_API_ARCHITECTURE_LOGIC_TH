@@ -19,6 +19,8 @@ Run inside a clean Debian Trixie environment as root:
 ./build.sh
 ```
 
+`live-build` emits its ISO in the project working directory; the build script discovers that output (and the alternate `binary/` layout), then normalizes the deliverables into `dist/`.
+
 Outputs are written to `dist/`:
 - `research-os-amd64.iso`
 - `SHA256SUMS`
