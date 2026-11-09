@@ -172,6 +172,8 @@ The failing log for the Linux ISO job shows:
 
 The Debian Live Manual documents binary hooks as running after the other binary commands and before `binary_checksums`. The exact Debian Trixie `live-build 1:20250505+deb13u1` source shows that `binary_grub_cfg` sets `_TARGET="binary/boot/grub"`, creates that directory, copies GRUB templates there, and edits matching `*.cfg` files. The exact Trixie `binary_hooks` source then runs `cd binary` before executing the hook. Therefore, paths inside a binary hook are relative to the `binary/` directory: the hook's old `binary/boot/grub/grub.cfg` resolved to the incorrect nested path `binary/binary/boot/grub/grub.cfg`. The correct relative path is `boot/grub/grub.cfg` (subject to verifying the expected file exists in the generated image). The immediate failure was a working-directory/path-root mismatch, not hook ordering. Do not repeat the unsupported claim that the binary hook ran before `binary_grub_cfg`.
 
+A subsequent source audit also found a separate build-output correctness issue: the package inventory format had doubled escape characters for tab/newline delimiters, while the metadata writer emitted a literal backslash-n instead of a real line feed. The build script and build-contract tests were corrected to require actual delimiters/newlines. These were discovered during the broader output-integrity audit; they are not the cause of the original hook failure.
+
 References used for this incident:
 - https://live-team.pages.debian.net/live-manual/html/live-manual/customizing-contents.en.html
 - https://sources.debian.org/src/live-build/1%3A20250505%2Bdeb13u1/scripts/build/binary_grub_cfg
