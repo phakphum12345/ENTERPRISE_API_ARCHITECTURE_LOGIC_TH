@@ -17,6 +17,13 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("lb clean --purge", script)
         self.assertNotIn("lb clean --purge || true", script)
 
+    def test_iso_discovery_accepts_live_build_working_directory_output(self):
+        script = (ROOT / "build.sh").read_text(encoding="utf-8")
+        self.assertIn('find "$ROOT" -maxdepth 2 -type f -name', script)
+        self.assertIn('! -path "$DIST/*"', script)
+        self.assertIn('"$DIST/research-os-amd64.iso"', script)
+        self.assertNotIn('find "$ROOT/binary" -maxdepth 1', script)
+
     def test_live_kernel_initramfs_and_rootfs_are_required(self):
         packages = (ROOT / "config/package-lists/researchos.list.chroot").read_text(encoding="utf-8")
         for package in ("linux-image-amd64", "live-boot", "live-config", "systemd-sysv"):
