@@ -1,9 +1,9 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "owner": {
     "user_id": "owner",
     "role": "owner",
-    "services": [8787, 8788, 8790],
+    "services": ["research-os-api", "research-os-v3", "owner-friend"],
     "friend_service": "internal-only"
   },
   "users": [
@@ -12,10 +12,17 @@
     {"user_id": "user-c", "role": "agent"}
   ],
   "service_boundaries": {
-    "8787": "workspace",
-    "8788": "team-engineering",
-    "8790": "friend-internal"
+    "research-os-api": "workspace",
+    "research-os-v3": "team-engineering",
+    "owner-friend": "friend-internal"
+  },
+  "discovery": {
+    "contract": "ROS-PORT-DISCOVERY-001",
+    "registry_schema_version": 1,
+    "endpoint_identity": "service-id",
+    "port_assignment": "operating-system",
+    "ollama_endpoint": "externally-managed-unchanged"
   },
   "team_context": ["chat", "agents", "memory", "files", "tasks"],
-  "authorization_rule": "identity -> role -> team -> permission; port is not identity"
+  "authorization_rule": "identity -> role -> team -> permission; service port is not identity"
 }
