@@ -51,6 +51,14 @@ jobs:
             -w /workspace/os-image \
             debian:trixie bash ./build.sh
 
+      - name: UEFI boot smoke test in QEMU/OVMF
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
+          bash -n os-image/test-uefi-qemu.sh
+          bash os-image/test-uefi-qemu.sh os-image/dist/research-os-amd64.iso
+
       - name: Verify checksum and metadata
         run: |
           set -euo pipefail
