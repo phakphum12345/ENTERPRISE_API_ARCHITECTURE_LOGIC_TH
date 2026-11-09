@@ -21,7 +21,10 @@ def registry_directory() -> Path:
     configured = os.environ.get("RESEARCH_OS_SERVICE_REGISTRY_DIR", "").strip()
     if configured:
         return Path(configured).expanduser().resolve()
-    data_dir = os.environ.get("RESEARCH_OS_DATA_DIR", "").strip()
+    data_dir = (
+        os.environ.get("RESEARCH_OS_DATA_DIR", "").strip()
+        or os.environ.get("RESEARCH_OS_V3_DATA_DIR", "").strip()
+    )
     if data_dir:
         return (Path(data_dir).expanduser() / "run" / "services").resolve()
     if os.name == "nt":
