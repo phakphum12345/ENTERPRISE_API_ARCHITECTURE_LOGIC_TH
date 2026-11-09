@@ -1,30 +1,43 @@
 param(
-  [int]$Port = 8787,
-  [string]$PidFile = "$env:USERPROFILE\ResearchOSData\run\research-os-api.pid"
+  [string]$DataDir = "$env:USERPROFILE\ResearchOSData"
 )
 
 $ErrorActionPreference = "Stop"
+$RunDir = Join-Path $DataDir "run"
+$RegistryDir = Join-Path $RunDir "services"
 
-if (Test-Path $PidFile) {
-  $rawPid = (Get-Content $PidFile -Raw).Trim()
-  $pidValue = 0
-  if ([int]::TryParse($rawPid, [ref]$pidValue)) {
-    $process = Get-Process -Id $pidValue -ErrorAction SilentlyContinue
-    if ($process) {
-      Stop-Process -Id $pidValue -Force
-      Write-Host "Research OS Local API stopped (PID $pidValue)."
+function Stop-VerifiedProcess([string]$PidFile, [string]$ExpectedCommand) {
+  if (-not (Test-Path $PidFile)) { return }
+  $raw = (Get-Content -Path $PidFile -Raw).Trim()
+  $processId = 0
+  if (-not [int]::TryParse($raw, [ref]$processId)) {
+    Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
+    return
+  }
+  $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId=$processId" -ErrorAction SilentlyContinue
+  if ($processInfo -and ([string]$processInfo.CommandLine).Contains($ExpectedCommand)) {
+    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    Write-Host "Stopped $ExpectedCommand (PID $processId)."
+    foreach ($service in @("research-os-api", "owner-friend")) {
+      $recordPath = Join-Path $RegistryDir "$service.json"
+      if (Test-Path $recordPath) {
+        try {
+          $record = Get-Content -Path $recordPath -Raw | ConvertFrom-Json
+          if ([int]$record.pid -eq $processId) {
+            Remove-Item $recordPath -Force -ErrorAction SilentlyContinue
+          }
+        } catch { }
+      }
     }
+  } elseif (-not $processInfo) {
+    Write-Host "Process $processId is already stopped."
+  } else {
+    Write-Warning "Refusing to stop PID $processId because its command line does not match $ExpectedCommand."
   }
   Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
 }
 
-$connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-foreach ($connection in $connections) {
-  $process = Get-Process -Id $connection.OwningProcess -ErrorAction SilentlyContinue
-  if ($process -and $process.ProcessName -match 'python') {
-    Stop-Process -Id $connection.OwningProcess -Force
-    Write-Host "Stopped Python listener on port $Port (PID $($connection.OwningProcess))."
-  }
-}
+Stop-VerifiedProcess (Join-Path $RunDir "research-os-api.pid") "render_server.py"
+Stop-VerifiedProcess (Join-Path $RunDir "research-os-friend.pid") "run_friend_service.py"
 
-Write-Host "Research OS Local API is not listening on port $Port."
+Write-Host "Research OS Local stop request completed. No unrelated port listener was terminated."
