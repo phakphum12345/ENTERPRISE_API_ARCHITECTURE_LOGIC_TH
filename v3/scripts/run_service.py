@@ -29,7 +29,12 @@ def main() -> int:
     service = V3LocalService(host=host, port=port, audit_path=audit_path)
     server = service.build_server()
     actual_host, actual_port = server.server_address[:2]
-    registry_dir = registry_directory()
+    configured_registry = os.environ.get("RESEARCH_OS_SERVICE_REGISTRY_DIR", "").strip()
+    registry_dir = (
+        Path(configured_registry).expanduser().resolve()
+        if configured_registry
+        else layout.root / "run" / "services"
+    )
     published = False
     if actual_host in {"127.0.0.1", "::1", "localhost"}:
         endpoint = publish_endpoint(
