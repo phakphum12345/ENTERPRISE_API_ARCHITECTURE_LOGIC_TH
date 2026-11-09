@@ -36,7 +36,8 @@ apt-get install -y --no-install-recommends \
   syslinux-common \
   syslinux-utils \
   python3 \
-  file
+  file \
+  dpkg-dev
 
 lb clean --purge || true
 
@@ -74,6 +75,7 @@ grep -Eq 'filesystem.squashfs' "$DIST/iso-live-contents.txt"
 (
   cd "$DIST"
   sha256sum research-os-amd64.iso > SHA256SUMS
+  chroot "$ROOT/chroot" dpkg-query -W -f='${Package}=${Version}\n' | sort > SBOM-packages.txt
 )
 
 python3 - "$DIST/build-metadata.json" "$DEBIAN_SUITE" "$SOURCE_SHA" "$SOURCE_DATE_EPOCH" "$DIST/research-os-amd64.iso" <<'PY'
@@ -84,7 +86,11 @@ import sys
 
 output, suite, source_sha, epoch, artifact = sys.argv[1:]
 path = pathlib.Path(artifact)
-digest = hashlib.sha256(path.read_bytes()).hexdigest()
+digest = hashlib.sha256()
+with path.open("rb") as stream:
+    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+        digest.update(chunk)
+digest = digest.hexdigest()
 metadata = {
     "schema_version": "1.0",
     "product": "Research OS",
@@ -100,6 +106,9 @@ metadata = {
     "installer": "not-included",
     "source_sha": source_sha,
     "source_date_epoch": int(epoch),
+    "live_build_version": __import__("subprocess").check_output(["lb", "--version"], text=True).strip(),
+    "package_inventory": "SBOM-packages.txt",
+    "package_inventory_sha256": hashlib.sha256(pathlib.Path("dist/SBOM-packages.txt").read_bytes()).hexdigest(),
     "size_bytes": path.stat().st_size,
     "sha256": digest,
     "hardware_qualification": "not-performed",
