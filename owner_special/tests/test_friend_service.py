@@ -1,4 +1,5 @@
 import json
+import sys
 import tempfile
 import unittest
 import urllib.error
@@ -9,8 +10,8 @@ from research_os_friend import OwnerFriendService
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-if str(REPOSITORY_ROOT) not in __import__("sys").path:
-    __import__("sys").path.insert(0, str(REPOSITORY_ROOT))
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from tools.research_os_api.service_registry import publish_endpoint, read_endpoint, remove_endpoint
 
