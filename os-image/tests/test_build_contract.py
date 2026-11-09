@@ -57,7 +57,7 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn('echo "Using OVMF VARS template: $OVMF_VARS"', script)
         self.assertIn("OVMF_VARS_4M.fd", script)
         self.assertIn("RESEARCH_OS_GRUB_SERIAL=READY", script)
-        self.assertIn("RESEARCH_OS_LIVE_READY", script)
+        self.assertIn("RESEARCH_OS_LIVE_READY=1", script)
         self.assertIn("qemu-debug.log", script)
         self.assertIn('cp -- "$OVMF_VARS" "$WORK/OVMF_VARS.fd"', script)
         self.assertIn('-drive if=pflash,format=raw,unit=0,readonly=on,file="$OVMF_CODE"', script)
@@ -75,6 +75,17 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("terminal_output console serial", hook)
         self.assertIn("RESEARCH_OS_GRUB_SERIAL=READY", hook)
         self.assertIn('cat "$GRUB_CONFIG"', hook)
+
+
+    def test_live_graphical_readiness_marker_is_conditioned_on_display_manager(self):
+        service = (ROOT / "config/includes.chroot/etc/systemd/system/research-os-live-ready.service").read_text(encoding="utf-8")
+        hook = (ROOT / "config/hooks/live/0150-enable-live-ready-marker.hook.chroot").read_text(encoding="utf-8")
+        self.assertIn("ConditionPathExists=/dev/ttyS0", service)
+        self.assertIn("After=display-manager.service", service)
+        self.assertIn("systemctl is-active --quiet display-manager.service", service)
+        self.assertIn("RESEARCH_OS_LIVE_READY=1", service)
+        self.assertIn("graphical.target.wants", hook)
+        self.assertIn("research-os-live-ready.service", hook)
 
     def test_package_inventory_and_metadata_use_real_delimiters(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8")
