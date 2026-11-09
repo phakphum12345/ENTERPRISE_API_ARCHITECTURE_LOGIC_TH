@@ -78,10 +78,15 @@ jobs:
           assert meta["package_inventory_sha256"] == hashlib.sha256(inventory.read_bytes()).hexdigest()
           assert json.loads(sbom.read_text())["bomFormat"] == "CycloneDX"
           assert meta["hardware_qualification"] == "not-performed"
+          assert meta["grub_efi_package_version"]
+          assert meta["grub_common_package_version"]
+          assert (root / "grub-serial-module-path.txt").read_text().strip()
+          assert (root / "grub-terminal-module-path.txt").read_text().strip()
           print("RESEARCH_OS_IMAGE_METADATA=PASS")
           PY
 
-      - name: Upload ISO and provenance
+      - name: Upload ISO and provenance (including boot-failure diagnostics)
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: research-os-live-iso-${{ github.sha }}
@@ -92,5 +97,7 @@ jobs:
             os-image/dist/iso-live-contents.txt
             os-image/dist/SBOM.cdx.json
             os-image/dist/PACKAGE-INVENTORY.txt
-          if-no-files-found: error
+            os-image/dist/grub-serial-module-path.txt
+            os-image/dist/grub-terminal-module-path.txt
+          if-no-files-found: warn
           retention-days: 14
