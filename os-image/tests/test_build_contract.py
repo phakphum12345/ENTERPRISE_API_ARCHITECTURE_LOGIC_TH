@@ -32,7 +32,7 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn('"$DIST/research-os-amd64.iso"', script)
         self.assertIn('-find / -name serial.mod', script)
         self.assertIn('-find / -name terminal.mod', script)
-        self.assertIn('grub-efi-package-version', script.lower())
+        self.assertIn('GRUB_EFI_VERSION', script)
         self.assertNotIn('find "$ROOT/binary" -maxdepth 1', script)
 
     def test_live_kernel_initramfs_and_rootfs_are_required(self):
@@ -95,7 +95,7 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn(r"dpkg-query -W -f='${binary:Package}\t${Version}\n'", script)
         self.assertIn('json.dumps(metadata, indent=2, sort_keys=True) + chr(10)', script)
         self.assertIn('grub_efi_package_version', script)
-        self.assertIn('grub_common_package_version', script)
+        self.assertIn('GRUB_COMMON_VERSION', script)
         self.assertNotIn(r'json.dumps(metadata, indent=2, sort_keys=True) + "\\n"', script)
 
     def test_documentation_first_troubleshooting_protocol_is_present(self):
