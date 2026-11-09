@@ -25,7 +25,7 @@ class V3LocalService:
         self,
         *,
         host: str = "127.0.0.1",
-        port: int = 8788,
+        port: int = 0,
         orchestrator: UnifiedMasterOrchestrator | None = None,
         audit_path: Path | None = None,
         data_layout: DataLayout | None = None,
