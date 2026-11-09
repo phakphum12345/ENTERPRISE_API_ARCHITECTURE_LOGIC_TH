@@ -6,7 +6,7 @@ import unittest
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from service_registry import publish_endpoint, read_endpoint, remove_endpoint
+from tools.research_os_api.service_registry import publish_endpoint, read_endpoint, remove_endpoint
 
 
 class ServiceRegistryTests(unittest.TestCase):
