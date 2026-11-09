@@ -20,6 +20,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from developer_access import DeveloperAccessStore
 from flutter_code_tool import apply as apply_flutter_code, list_files as list_flutter_files, preview as preview_flutter_code, project_map as flutter_projects, read_file as read_flutter_file
 from developer_identity import IdentityAssertionError, IdentityAssertionVerifier
+from service_registry import publish_endpoint, registry_directory, remove_endpoint
 
 TRIAL_RESOURCES: tuple[dict[str, Any], ...] = (
     {"resource_id":"demo-api-client","workspace_id":"trial-workspace","kind":"code","name":"api_client.py","language":"python","summary":"Synthetic read-only API client example.","content":"def get_health(client):\n    return client.get('/health')\n"},
@@ -321,15 +322,30 @@ class DeveloperPlatformHandler(BaseHTTPRequestHandler):
 
 def main() -> int:
     host = os.environ.get("RESEARCH_OS_DEVELOPER_HOST", "127.0.0.1")
-    port = int(os.environ.get("RESEARCH_OS_DEVELOPER_PORT", "8790"))
+    port = int(os.environ.get("RESEARCH_OS_DEVELOPER_PORT", "0"))
     server = ThreadingHTTPServer((host, port), DeveloperPlatformHandler)
-    print(f"Research OS Developer Platform API listening on http://{host}:{port}")
+    actual_host, actual_port = server.server_address[:2]
+    registry_dir = registry_directory()
+    published = False
+    if actual_host in {"127.0.0.1", "::1", "localhost"}:
+        endpoint = publish_endpoint(
+            "research-os-developer-api",
+            str(actual_host),
+            int(actual_port),
+            directory=registry_dir,
+        )
+        published = True
+        print(f"Research OS Developer API READY {endpoint['base_url']}", flush=True)
+    else:
+        print(f"Research OS Developer API listening on {actual_host}:{actual_port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         server.server_close()
+        if published:
+            remove_endpoint("research-os-developer-api", directory=registry_dir, pid=os.getpid())
     return 0
 
 
