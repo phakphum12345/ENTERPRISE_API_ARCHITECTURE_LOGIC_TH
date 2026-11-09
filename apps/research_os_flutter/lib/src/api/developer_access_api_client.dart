@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'api_endpoint_registry_stub.dart'
+    if (dart.library.io) 'api_endpoint_registry_io.dart' as endpoint_registry;
+
 class DeveloperAccessApiException implements Exception {
   const DeveloperAccessApiException(this.message, {this.statusCode});
 
@@ -14,17 +17,43 @@ class DeveloperAccessApiException implements Exception {
 
 class DeveloperAccessApiClient {
   DeveloperAccessApiClient({String? baseUrl, http.Client? client})
-      : baseUrl = baseUrl ??
-            const String.fromEnvironment(
-              'RESEARCH_OS_DEVELOPER_API_BASE_URL',
-              defaultValue: 'http://127.0.0.1:8790',
-            ),
+      : _baseUrl = _configuredBaseUrl(baseUrl),
         _client = client ?? http.Client();
 
-  final String baseUrl;
+  static String? _configuredBaseUrl(String? value) {
+    final explicit = value?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    const configured = String.fromEnvironment('RESEARCH_OS_DEVELOPER_API_BASE_URL');
+    return configured.trim().isEmpty ? null : configured.trim();
+  }
+
+  String? _baseUrl;
   final http.Client _client;
 
-  Uri _uri(String path) => Uri.parse('$baseUrl$path');
+  String get baseUrl => _baseUrl ?? '';
+
+  Future<void> initialize() async {
+    if (_baseUrl != null) return;
+    final discovered = await endpoint_registry.discoverLocalServiceEndpoint(
+      'research-os-developer-api',
+    );
+    if (discovered == null) {
+      throw const DeveloperAccessApiException(
+        'Developer API is unavailable: no healthy research-os-developer-api endpoint was discovered.',
+      );
+    }
+    _baseUrl = discovered;
+  }
+
+  Uri _uri(String path) {
+    final endpoint = _baseUrl;
+    if (endpoint == null || endpoint.isEmpty) {
+      throw const DeveloperAccessApiException(
+        'Developer API endpoint has not been discovered.',
+      );
+    }
+    return Uri.parse('$endpoint$path');
+  }
 
   Future<Map<String, dynamic>> getSession() => _get('/v2/developer/session');
 
