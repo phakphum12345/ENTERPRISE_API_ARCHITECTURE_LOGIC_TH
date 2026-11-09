@@ -181,3 +181,54 @@ References used for this incident:
 - https://sources.debian.org/src/live-build/1%3A20230502/scripts/build/binary_grub_cfg/
 - https://packages.debian.org/source/trixie/live-build
 - https://www.gnu.org/software/grub/manual/grub/
+
+
+## 12. Current incident note — PR #46 UEFI/QEMU boot timeout
+
+**Evidence target:** PR #46, head `26bdbd6b38c6d6b1cffab14872dc693c1ea7e868`, workflow run `42597860285`, job `129097184369`.
+
+### Observed facts
+
+- The Debian Trixie live-build completed and produced `research-os-amd64.iso` (1,249,683,456 bytes).
+- The build metadata and checksums were emitted. The job then installed QEMU/OVMF and ran the real ISO with `qemu-system-x86_64`.
+- The runner reported OVMF CODE `/usr/share/OVMF/OVMF_CODE_4M.fd` and VARS `/usr/share/OVMF/OVMF_VARS_4M.fd`.
+- QEMU ran for the full 180-second timeout. The captured serial log contained OVMF messages including `BdsDxe: starting Boot0002 "UEFI QEMU DVD-ROM"`, but no GRUB serial marker, Linux kernel banner, or Research OS live-session/login marker.
+- This proves the firmware selected the UEFI DVD boot entry. It does **not** prove that GRUB produced serial output, that the Linux kernel started, or that the live userspace/desktop started.
+- Exact versions visible in the failing build log: `live-build 1:20250505+deb13u1`; `grub-common 2.12-9+deb13u2`; `grub-efi-amd64-bin 2.12-9+deb13u2`; `grub-efi-amd64-signed 1+2.12+9+deb13u2`; QEMU `1:10.2.1+ds-1ubuntu3.3`; OVMF package `2025.11-3ubuntu7.3`.
+
+### Documentation matrix
+
+| Layer | Exact source and documented behavior | Observed evidence / implication |
+|---|---|---|
+| GRUB serial | GNU GRUB 2.12 Manual, serial and serial terminal sections: `https://www.gnu.org/software/grub/manual/grub/grub.html`. The serial device is initialized with `serial`; it is only used for communication after `terminal_input` or `terminal_output` selects it. | The hook called these commands but did not explicitly load the corresponding modules. The next build now loads them explicitly and emits a unique serial marker. |
+| GRUB modules | Debian Trixie `grub-efi-amd64-bin 2.12-9+deb13u2` file list: `https://packages.debian.org/trixie/amd64/grub-efi-amd64-bin/filelist`. It contains `serial.mod` and `terminal.mod` under `/usr/lib/grub/x86_64-efi/`. | The package has the modules, but the failed ISO was not uploaded in that run, so their presence and location inside that exact ISO were not independently inspected. The build now searches the ISO for both modules and records their paths. |
+| Linux serial console | Linux kernel Serial Console documentation: `https://docs.kernel.org/admin-guide/serial-console.html`. Kernel output uses a `console=device,options` parameter such as `console=ttyS0,115200n8`. | The image passes `console=ttyS0,115200n8`; the next run must show a Linux/userspace marker, not merely OVMF output. |
+| Debian Live | Debian Trixie `live-boot(7)`: `https://manpages.debian.org/trixie/live-boot-doc/live-boot.7.en.html`. It documents `console=TTY,SPEED` for the live-getty console. | The image configures ttyS0 and explicitly enables `serial-getty@ttyS0.service`; a separate graphical readiness marker now checks that the display manager is active. |
+| systemd getty | Debian Trixie `systemd-getty-generator(8)`: `https://manpages.debian.org/trixie/systemd/systemd-getty-generator.8.en.html`. The kernel `console=` parameter can cause a serial getty to be generated. | This corroborates the serial-login path but does not by itself prove the desktop started. |
+| QEMU serial capture | QEMU System Emulator invocation documentation: `https://www.qemu.org/docs/master/system/invocation.html`. Character devices can route guest serial traffic to a host file backend. | QEMU's `-serial file:$LOG` captured OVMF output, so the host-side serial log file was connected. The next run also saves QEMU guest-error/CPU-reset diagnostics. |
+
+### Working hypothesis — not yet a proven root cause
+
+The current best-supported hypothesis is that the GRUB EFI configuration attempted to use the `serial` and `terminal_input/output` commands without explicitly loading their dynamically loadable modules. Debian's exact Trixie package contains `serial.mod` and `terminal.mod`, and the GRUB manual describes the required serial initialization and terminal selection sequence. The previous log cannot prove this was the sole cause because the actual failed ISO was not retained and no GRUB output was captured.
+
+### Minimal correction and regression evidence
+
+The next patch:
+
+1. Explicitly runs `insmod serial` and `insmod terminal` before initializing/selecting the serial terminal.
+2. Emits `RESEARCH_OS_GRUB_SERIAL=READY` only after GRUB selects the serial terminal.
+3. Requires a separate `RESEARCH_OS_LIVE_READY=1` marker after systemd confirms `display-manager.service` is active; the marker is conditional on `/dev/ttyS0` and does not change normal hardware boot behavior.
+4. Verifies that the built ISO actually contains `serial.mod` and `terminal.mod`, and records the exact GRUB package versions in build metadata.
+5. Saves QEMU guest-error/CPU-reset diagnostics and uploads the ISO plus provenance even when the boot smoke test fails.
+
+The new test is staged, not yet proven: the next CI run on the resulting commit SHA must show both markers and a successful QEMU timeout-as-expected result. If the GRUB marker is absent, inspect the retained ISO's GRUB config/module paths and QEMU debug log. If the GRUB marker is present but the live marker is absent, investigate the kernel command line, live-boot discovery, serial getty, systemd target, and display-manager startup separately. Do not collapse these into a generic "QEMU failed" diagnosis.
+
+### Sources reviewed
+
+- GNU GRUB 2.12 Manual — `https://www.gnu.org/software/grub/manual/grub/grub.html`
+- Debian Trixie GRUB EFI AMD64 package file list — `https://packages.debian.org/trixie/amd64/grub-efi-amd64-bin/filelist`
+- Linux Kernel Serial Console — `https://docs.kernel.org/admin-guide/serial-console.html`
+- Debian Trixie live-boot(7) — `https://manpages.debian.org/trixie/live-boot-doc/live-boot.7.en.html`
+- Debian Trixie systemd-getty-generator(8) — `https://manpages.debian.org/trixie/systemd/systemd-getty-generator.8.en.html`
+- QEMU System Emulator invocation — `https://www.qemu.org/docs/master/system/invocation.html`
+- xorriso(1), ISO tree traversal with `-find` — `https://manpages.debian.org/unstable/xorriso/xorriso.1.en.html`
