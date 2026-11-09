@@ -31,6 +31,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate image build and safety contract
+        run: |
+          set -euo pipefail
+          bash -n os-image/build.sh
+          python3 -m unittest discover -s os-image/tests -v
+
       - name: Build in isolated Debian Trixie container
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -77,5 +83,6 @@ jobs:
             os-image/dist/SHA256SUMS
             os-image/dist/build-metadata.json
             os-image/dist/iso-live-contents.txt
+            os-image/dist/SBOM-packages.txt
           if-no-files-found: error
           retention-days: 14
