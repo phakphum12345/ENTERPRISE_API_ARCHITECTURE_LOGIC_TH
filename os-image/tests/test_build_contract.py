@@ -53,7 +53,11 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("-type f -o -type l", script)
         self.assertIn("OVMF_CODE*.fd", script)
         self.assertIn('echo "Using OVMF UEFI firmware: $OVMF_CODE"', script)
-        self.assertIn('-bios "$OVMF_CODE"', script)
+        self.assertIn("OVMF_VARS_4M.fd", script)
+        self.assertIn('cp -- "$OVMF_VARS" "$WORK/OVMF_VARS.fd"', script)
+        self.assertIn('-drive if=pflash,format=raw,unit=0,readonly=on,file="$OVMF_CODE"', script)
+        self.assertIn('-drive if=pflash,format=raw,unit=1,file="$WORK/OVMF_VARS.fd"', script)
+        self.assertNotIn('-bios "$OVMF_CODE"', script)
 
     def test_build_script_contains_no_physical_disk_write_commands(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8").lower()
