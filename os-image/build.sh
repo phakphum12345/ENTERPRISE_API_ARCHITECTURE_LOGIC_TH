@@ -61,6 +61,9 @@ lb config \
 # Git content APIs do not preserve executable mode; make the binary hook
 # executable explicitly so live-build runs it before producing the ISO.
 chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary
+# Git content APIs do not preserve executable mode; make the binary hook
+# executable explicitly so live-build runs it before producing the ISO.
+chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary
 lb build
 
 # live-build writes the binary ISO in the project working directory
