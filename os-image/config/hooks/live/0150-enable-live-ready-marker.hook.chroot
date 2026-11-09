@@ -3,6 +3,9 @@ set -eu
 
 # Enable the smoke-test marker only in the live image. It reports readiness
 # after the display manager is active and is inert when no serial TTY exists.
+# This is a desktop live image: boot to the graphical target by default.
+ln -sfn /lib/systemd/system/graphical.target /etc/systemd/system/default.target
+
 mkdir -p /etc/systemd/system/graphical.target.wants
 ln -sfn ../research-os-live-ready.service \
   /etc/systemd/system/graphical.target.wants/research-os-live-ready.service
