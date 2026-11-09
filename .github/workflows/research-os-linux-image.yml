@@ -1,0 +1,96 @@
+name: Research OS Linux Live Image
+
+on:
+  workflow_call:
+  push:
+    branches: [main]
+    paths:
+      - "os-image/**"
+      - ".github/workflows/research-os-linux-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-live-iso:
+    name: Build and inspect x86_64 live ISO
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Validate image build and safety contract
+        run: |
+          set -euo pipefail
+          bash -n os-image/build.sh
+          python3 -m unittest discover -s os-image/tests -v
+
+      - name: Build in isolated Debian Trixie container
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          docker run --privileged --rm \
+            -e DEBIAN_SUITE=trixie \
+            -e SOURCE_SHA="$SOURCE_SHA" \
+            -e SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace/os-image \
+            debian:trixie bash ./build.sh
+
+      - name: UEFI boot smoke test in QEMU/OVMF
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
+          bash -n os-image/test-uefi-qemu.sh
+          bash os-image/test-uefi-qemu.sh os-image/dist/research-os-amd64.iso
+
+      - name: Verify checksum and metadata
+        run: |
+          set -euo pipefail
+          cd os-image/dist
+          sha256sum --check SHA256SUMS
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path(".")
+          meta = json.loads((root / "build-metadata.json").read_text())
+          iso = root / "research-os-amd64.iso"
+          assert meta["product"] == "Research OS"
+          assert meta["architecture"] == "amd64"
+          assert meta["installer"] == "not-included"
+          assert meta["source_sha"] == "${{ github.event.pull_request.head.sha || github.sha }}"
+          assert meta["size_bytes"] == iso.stat().st_size
+          assert meta["sha256"] == hashlib.sha256(iso.read_bytes()).hexdigest()
+          sbom = root / meta["sbom"]
+          inventory = root / meta["package_inventory"]
+          assert sbom.is_file() and inventory.is_file()
+          assert meta["sbom_sha256"] == hashlib.sha256(sbom.read_bytes()).hexdigest()
+          assert meta["package_inventory_sha256"] == hashlib.sha256(inventory.read_bytes()).hexdigest()
+          assert json.loads(sbom.read_text())["bomFormat"] == "CycloneDX"
+          assert meta["hardware_qualification"] == "not-performed"
+          print("RESEARCH_OS_IMAGE_METADATA=PASS")
+          PY
+
+      - name: Upload ISO and provenance
+        uses: actions/upload-artifact@v6
+        with:
+          name: research-os-live-iso-${{ github.sha }}
+          path: |
+            os-image/dist/research-os-amd64.iso
+            os-image/dist/SHA256SUMS
+            os-image/dist/build-metadata.json
+            os-image/dist/iso-live-contents.txt
+            os-image/dist/SBOM.cdx.json
+            os-image/dist/PACKAGE-INVENTORY.txt
+          if-no-files-found: error
+          retention-days: 14
