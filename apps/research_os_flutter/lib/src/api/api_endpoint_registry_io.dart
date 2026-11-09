@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 Future<String?> discoverLocalApiEndpoint({
-  List<Directory>? searchDirectories,
+  List<Object>? searchDirectories,
 }) async {
-  final directories = searchDirectories ?? _defaultRegistryDirectories();
+  final directories = searchDirectories?.cast<Directory>() ?? _defaultRegistryDirectories();
   for (final directory in directories) {
     final file = File('${directory.path}${Platform.pathSeparator}research-os-api.json');
     try {
