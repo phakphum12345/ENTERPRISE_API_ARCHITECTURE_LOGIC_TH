@@ -70,6 +70,12 @@ class ResearchOSImageBuildContractTests(unittest.TestCase):
         self.assertIn("terminal_output console serial", hook)
         self.assertIn('cat "$GRUB_CONFIG"', hook)
 
+    def test_package_inventory_and_metadata_use_real_delimiters(self):
+        script = (ROOT / "build.sh").read_text(encoding="utf-8")
+        self.assertIn(r"dpkg-query -W -f='${binary:Package}\t${Version}\n'", script)
+        self.assertIn('json.dumps(metadata, indent=2, sort_keys=True) + chr(10)', script)
+        self.assertNotIn(r'json.dumps(metadata, indent=2, sort_keys=True) + "\\n"', script)
+
     def test_build_script_contains_no_physical_disk_write_commands(self):
         script = (ROOT / "build.sh").read_text(encoding="utf-8").lower()
         forbidden = (
