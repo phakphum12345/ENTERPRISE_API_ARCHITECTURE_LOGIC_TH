@@ -76,7 +76,7 @@ class _LocalApiControlPageState extends State<LocalApiControlPage> {
           runSpacing: 12,
           children: <Widget>[
             SizedBox(width: 260, child: EnterpriseStatusTile(icon: Icons.miscellaneous_services_outlined, title: 'Windows Service', value: _manager.supported ? 'Available' : 'Unsupported', caption: 'ResearchOSService')),
-            const SizedBox(width: 260, child: EnterpriseStatusTile(icon: Icons.link_outlined, title: 'Local endpoint', value: '127.0.0.1:8787', caption: 'Research OS API')),
+            const SizedBox(width: 260, child: EnterpriseStatusTile(icon: Icons.link_outlined, title: 'Local endpoint', value: 'Auto-discovered', caption: 'Research OS API · Service Registry')),
             SizedBox(width: 260, child: EnterpriseStatusTile(icon: Icons.pending_actions_outlined, title: 'Manager', value: _busy ? 'Working…' : 'Ready', caption: 'GUI controlled')),
           ],
         ),
