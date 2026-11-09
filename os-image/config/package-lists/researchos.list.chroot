@@ -10,6 +10,7 @@ xorg
 network-manager
 network-manager-gnome
 sudo
+user-setup
 polkitd
 dbus-x11
 udisks2
