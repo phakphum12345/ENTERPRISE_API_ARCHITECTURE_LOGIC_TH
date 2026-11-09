@@ -118,6 +118,11 @@ jobs:
             v3.tests.test_research_tool_adapters \
             -v
 
+  linux-image:
+    name: Research OS Linux Live Image
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/research-os-linux-live-image'
+    uses: ./.github/workflows/research-os-linux-image.yml
+
   flutter-quality:
     name: Flutter Analyze Test Build
     runs-on: ubuntu-latest
@@ -163,7 +168,7 @@ jobs:
 
   gate:
     name: Research OS Final Gate
-    needs: [python-quality, research-e2e, flutter-quality]
+    needs: [python-quality, research-e2e, flutter-quality, linux-image]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
@@ -172,7 +177,13 @@ jobs:
           echo "python-quality=${{ needs.python-quality.result }}"
           echo "research-e2e=${{ needs.research-e2e.result }}"
           echo "flutter-quality=${{ needs.flutter-quality.result }}"
+          echo "linux-image=${{ needs.linux-image.result }}"
           test "${{ needs.python-quality.result }}" = success
           test "${{ needs.research-e2e.result }}" = success
           test "${{ needs.flutter-quality.result }}" = success
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$GITHUB_HEAD_REF" == "feat/research-os-linux-live-image" ]]; then
+            test "${{ needs.linux-image.result }}" = success
+          else
+            test "${{ needs.linux-image.result }}" = skipped
+          fi
           echo "RESEARCH_OS_GATE=PASS"
