@@ -15,7 +15,6 @@ from research_os_v3 import DataLayout, UnifiedMasterOrchestrator, V3LocalService
 from research_os_v3.models import SCALE_PROFILES
 from tools.research_os_api.service_registry import (
     publish_endpoint,
-    registry_directory,
     remove_endpoint,
 )
 
