@@ -12,10 +12,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: research-os-linux-image-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
 jobs:
   build-live-iso:
     name: Build and inspect x86_64 live ISO
