@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../api/api_endpoint_store.dart';
@@ -74,13 +74,15 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _retryLoadingProviders() {
+  Future<void> _retryLoadingProviders() async {
+    if (_loading) return;
     setState(() {
       _loading = true;
       _error = false;
       _message = null;
+      _providers = const <Map<String, dynamic>>[];
     });
-    _loadProviders();
+    await _loadProviders();
   }
 
   Future<void> _login(Map<String, dynamic> provider) async {

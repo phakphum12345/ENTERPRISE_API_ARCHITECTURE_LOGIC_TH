@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../ui/enterprise_navigation.dart';
 import 'v5_capability.dart';

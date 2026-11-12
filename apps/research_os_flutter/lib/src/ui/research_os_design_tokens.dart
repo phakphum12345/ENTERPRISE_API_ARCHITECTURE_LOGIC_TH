@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Platform UX tokens for the Research OS unified dark/light-beam visual language.
 /// Values mirror current/RESEARCH_OS_UNIFIED_UX_LIGHT_BEAM_CONTRACT.json.

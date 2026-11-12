@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  material_ui: ^1.0.0
   research_os_contracts:
     path: ../../packages/research_os_contracts
   flutter_markdown: ^0.7.3
