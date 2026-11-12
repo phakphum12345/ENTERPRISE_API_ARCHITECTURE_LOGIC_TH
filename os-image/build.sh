@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Report the exact failing command and source line; live-build may emit a
+# successful final banner even when a later shell validation returns non-zero.
+trap 'status=$?; printf "RESEARCH_OS_BUILD_ERROR status=%s line=%s command=%s\\n" "$status" "${BASH_LINENO[0]:-unknown}" "$BASH_COMMAND" >&2; exit "$status"' ERR
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
@@ -41,8 +45,11 @@ apt-get install -y --no-install-recommends \
 
 test -f config/package-lists/researchos.list.chroot
 test -f config/includes.chroot/etc/os-release
+echo "RESEARCH_OS_STEP=clean:start"
 lb clean --purge
+echo "RESEARCH_OS_STEP=clean:pass"
 
+echo "RESEARCH_OS_STEP=config:start"
 lb config \
   --distribution "$DEBIAN_SUITE" \
   --architectures amd64 \
@@ -62,7 +69,9 @@ lb config \
 # when invoking hooks, but set the mode explicitly for reproducible intent.
 chmod 0755 config/hooks/live/0200-enable-grub-serial-output.hook.binary
 chmod 0755 config/hooks/live/0150-enable-live-ready-marker.hook.chroot
+echo "RESEARCH_OS_STEP=live-build:start"
 lb build
+echo "RESEARCH_OS_STEP=live-build:pass"
 
 # live-build writes the binary ISO in the project working directory
 # (for example, live-image-amd64.hybrid.iso), not under binary/.
@@ -70,6 +79,7 @@ lb build
 # live-build configurations, while excluding our own dist/ copy.
 DIST="$ROOT/dist"
 mkdir -p "$DIST"
+echo "RESEARCH_OS_STEP=iso-discovery:start"
 ISO_SOURCE="$(find "$ROOT" -maxdepth 2 -type f -name '*.iso' \
   ! -path "$DIST/*" -print -quit)"
 if [[ -z "$ISO_SOURCE" || ! -s "$ISO_SOURCE" ]]; then
@@ -79,15 +89,18 @@ if [[ -z "$ISO_SOURCE" || ! -s "$ISO_SOURCE" ]]; then
 fi
 
 cp -- "$ISO_SOURCE" "$DIST/research-os-amd64.iso"
+echo "RESEARCH_OS_STEP=iso-layout:start"
 xorriso -indev "$DIST/research-os-amd64.iso" -ls /live > "$DIST/iso-live-contents.txt" 2>&1
 grep -Eq 'vmlinuz' "$DIST/iso-live-contents.txt"
 grep -Eq 'initrd' "$DIST/iso-live-contents.txt"
 grep -Eq 'filesystem.squashfs' "$DIST/iso-live-contents.txt"
+echo "RESEARCH_OS_STEP=iso-layout:pass"
 
 # The serial commands used by grub.cfg are dynamically loadable GRUB modules.
 # Verify the actual ISO carries both modules before attempting UEFI boot.
 xorriso -indev "$DIST/research-os-amd64.iso" -find / -name serial.mod > "$DIST/grub-serial-module-path.txt" 2>&1
 xorriso -indev "$DIST/research-os-amd64.iso" -find / -name terminal.mod > "$DIST/grub-terminal-module-path.txt" 2>&1
+echo "RESEARCH_OS_STEP=grub-module-discovery:pass"
 grep -Eq '/serial[.]mod$' "$DIST/grub-serial-module-path.txt"
 grep -Eq '/terminal[.]mod$' "$DIST/grub-terminal-module-path.txt"
 
@@ -195,5 +208,6 @@ metadata = {
 pathlib.Path(output).write_text(json.dumps(metadata, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
 PY
 
+echo "RESEARCH_OS_STEP=metadata:pass"
 echo "RESEARCH_OS_ISO_BUILD=PASS"
 cat "$DIST/build-metadata.json"
