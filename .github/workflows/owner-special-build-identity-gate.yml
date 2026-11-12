@@ -156,17 +156,26 @@ jobs:
         run: choco install innosetup --no-progress -y
 
       - name: 11. Build Owner Special Installer
-        working-directory: owner_special/installer
         shell: pwsh
         run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          & $iscc '.\owner-special.iss'
-          if ($LASTEXITCODE -ne 0) { throw 'Owner Installer build failed' }
+          $drive = 'R:'
+          if (Get-PSDrive -Name 'R' -ErrorAction SilentlyContinue) { throw 'Short build drive R: is already in use.' }
+          subst $drive $env:GITHUB_WORKSPACE
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create short build drive for Inno Setup.' }
+          try {
+            Push-Location 'R:\owner_special\installer'
+            try {
+              $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+              & $iscc '.\owner-special.iss'
+              if ($LASTEXITCODE -ne 0) { throw 'Owner Installer build failed' }
+            }
+            finally { Pop-Location }
+          }
+          finally { subst $drive /D }
           $setup = Join-Path $env:GITHUB_WORKSPACE $env:OWNER_SETUP
           if (-not (Test-Path $setup -PathType Leaf)) { throw "Owner Setup.exe missing: $setup" }
           Get-FileHash $setup -Algorithm SHA256 | Format-List | Out-Host
           Write-Host 'INSTALLER_BUILD_GATE=PASS'
-
       - name: 12. Final packaged Identity Gate
         shell: pwsh
         run: |

@@ -1,0 +1,13 @@
+[Unit]
+Description=Research OS live graphical-session boot evidence
+Wants=display-manager.service
+After=display-manager.service
+ConditionPathExists=/dev/ttyS0
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -ec 'systemctl is-active --quiet display-manager.service && printf "RESEARCH_OS_LIVE_READY=1\\n" > /dev/ttyS0'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

@@ -53,6 +53,11 @@ jobs:
           PYTHONPATH: v3
         run: python -c "import research_os_v3; print('research_os_v3 import OK')"
 
+  linux-image:
+    name: Research OS Linux Live Image
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/research-os-linux-live-image')
+    uses: ./.github/workflows/research-os-linux-image.yml
+
   flutter-gate:
     name: Flutter Windows build analyze test
     runs-on: windows-latest
